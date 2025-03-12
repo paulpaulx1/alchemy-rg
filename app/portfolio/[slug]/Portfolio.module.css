@@ -1,0 +1,51 @@
+/* app/portfolio/[slug]/Portfolio.module.css */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .breadcrumbs {
+    margin-bottom: 30px;
+    color: #666;
+    font-size: 16px;
+  }
+  
+  .breadcrumbLink {
+    color: #666;
+    text-decoration: none;
+  }
+  
+  .breadcrumbLink:hover {
+    text-decoration: underline;
+  }
+  
+  .breadcrumbSeparator {
+    margin: 0 8px;
+  }
+  
+  .breadcrumbCurrent {
+    font-weight: 500;
+  }
+  
+  .heading {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 15px;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .description {
+    font-size: 18px;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 30px;
+    max-width: 800px;
+  }
+  
+  .link {
+    color: #000;
+    text-decoration: underline;
+    font-size: 16px;
+  }
