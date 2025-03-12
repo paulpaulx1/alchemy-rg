@@ -1,4 +1,5 @@
 // app/layout.js
+import Link from 'next/link';
 import './globals.css';
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function RootLayout({ children }) {
       <body>
         <div className="site-wrapper">
           <header className="site-header">
-            <a href="/" className="site-title">RAJ GUPTA</a>
+            <Link href="/" className="site-title">RAJ GUPTA</Link>
           </header>
           <main className="site-main">
             {children}
