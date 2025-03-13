@@ -26,7 +26,8 @@ export async function generateStaticParams() {
 }
 
 export default async function Portfolio({ params }) {
-  const { slug } = params;
+  const resolvedParams = await params;
+  const {slug} = resolvedParams
 
   // Fetch portfolio data
   // In app/portfolio/[slug]/page.js, modify the query:
