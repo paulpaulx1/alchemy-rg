@@ -44,9 +44,9 @@ function buildPortfolioTree(portfolios) {
   return rootPortfolios;
 }
 
-export default function NavigationButton() {
+export default function NavigationButton({portfolios}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [portfolios, setPortfolios] = useState([]);
+  const [setPortfolios] = useState([]);
   const navRef = useRef(null);
   const pathname = usePathname();
 

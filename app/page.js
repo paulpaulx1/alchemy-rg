@@ -1,7 +1,6 @@
 // app/page.js
 import { createClient } from '@sanity/client';
 import FeaturedPortfolio from './components/FeaturedPortfolio';
-import Navigation from './components/Navigation';
 
 // Initialize the Sanity client (server-side)
 const client = createClient({
@@ -94,14 +93,8 @@ export default async function Home() {
     artworksCountByPortfolio[item._id] = item.count;
   });
   
-  // Build the recursive tree structure with artwork counts
-  const portfolioTree = buildPortfolioTree(allPortfolios, artworksCountByPortfolio);
-
   return (
     <main>
-      {/* Navigation - client component that receives server-fetched data */}
-      <Navigation portfolios={portfolioTree} />
-      
       {/* Featured Portfolio - client component that receives server-fetched data */}
       {featuredPortfolio?.artworks?.length > 0 ? (
         <FeaturedPortfolio artworks={featuredPortfolio.artworks} />
