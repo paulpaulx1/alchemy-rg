@@ -14,14 +14,17 @@ export async function GET() {
   try {
     // Fetch portfolios
     const portfolios = await client.fetch(`
-      *[_type == "portfolio"] {
-        _id,
-        title,
-        slug,
-        description,
-        "coverImage": coverImage.asset->url
-      }
-    `);
+  *[_type == "portfolio"] {
+    _id,
+    title,
+    slug,
+    "coverImageUrl": coalesce(
+      coverArtwork->image.asset->url,
+      coverImage.asset->url,
+      *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url
+    )
+  }
+`);
 
     // Fetch artist info
     const artist = await client.fetch(`

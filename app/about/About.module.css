@@ -1,0 +1,97 @@
+/* app/about/About.module.css */
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .heading {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 40px;
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+  
+  .profileImage {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto 20px;
+  }
+  
+  .profileImage img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .bioContainer {
+    flex: 1;
+  }
+  
+  .bio {
+    margin-bottom: 30px;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  
+  .contactInfo {
+    margin-top: 20px;
+    font-size: 16px;
+  }
+  
+  .contactInfo p {
+    margin-bottom: 10px;
+  }
+  
+  .socialLinks {
+    display: flex;
+    gap: 15px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+  }
+  
+  .socialLinks a {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .socialLinks a:hover {
+    text-decoration: underline;
+  }
+  
+  .cvLink {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+  }
+  
+  .cvLink:hover {
+    background-color: #f0f0f0;
+  }
+  
+  @media (min-width: 768px) {
+    .content {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    
+    .profileImage {
+      margin: 0;
+    }
+    
+    .bioContainer {
+      padding-left: 30px;
+    }
+  }

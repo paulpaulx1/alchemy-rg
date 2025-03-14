@@ -26,43 +26,48 @@ export async function generateStaticParams() {
 }
 
 export default async function Portfolio({ params }) {
-  const { slug } = params;
-  
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+
   // Fetch portfolio data
   const portfolio = await client.fetch(
     `
-    *[_type == "portfolio" && slug.current == $slug][0] {
+  *[_type == "portfolio" && slug.current == $slug][0] {
+    _id,
+    title,
+    description,
+    "parentPortfolio": parentPortfolio->{
+      title,
+      "slug": slug.current
+    },
+    "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
       _id,
       title,
+      mediaType,
+      "slug": slug.current,
+      "imageUrl": image.asset->url,
+      "lowResImageUrl": lowResImage.asset->url,
+      "videoUrl": video.asset->url,
+      "videoThumbnailUrl": videoThumbnail.asset->url,
+      externalVideoUrl,
       description,
-      "parentPortfolio": parentPortfolio->{
-        title,
-        "slug": slug.current
-      },
-      "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
-        _id,
-        title,
-        mediaType,
-        "slug": slug.current,
-        "imageUrl": image.asset->url,
-        "lowResImageUrl": lowResImage.asset->url,
-        "videoUrl": video.asset->url,
-        "videoThumbnailUrl": videoThumbnail.asset->url,
-        externalVideoUrl,
-        description,
-        year,
-        medium,
-        dimensions
-      },
-      "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] {
-        _id,
-        title,
-        "slug": slug.current,
-        description,
-        "coverImageUrl": coverImage.asset->url
-      }
+      year,
+      medium,
+      dimensions
+    },
+    "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] {
+      _id,
+      title,
+      "slug": slug.current,
+      description,
+      "coverImageUrl": coalesce(
+        coverArtwork->image.asset->url,
+        coverImage.asset->url,
+        *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url
+      )
     }
-    `,
+  }
+  `,
     { slug }
   );
 
@@ -84,22 +89,27 @@ export default async function Portfolio({ params }) {
         <Link href="/" className={styles.breadcrumbLink}>
           Home
         </Link>
+        <span className={styles.breadcrumbSeparator}>/</span>
+
         {portfolio.parentPortfolio && (
           <>
-            <span className={styles.breadcrumbSeparator}>/</span>
-            <Link 
+            <Link
               href={`/portfolio/${portfolio.parentPortfolio.slug}`}
               className={styles.breadcrumbLink}
             >
               {portfolio.parentPortfolio.title}
             </Link>
+            <span className={styles.breadcrumbSeparator}>/</span>
           </>
         )}
+
+        {/* Current portfolio (not clickable) */}
+        <span className={styles.breadcrumbCurrent}>{portfolio.title}</span>
       </div>
-      
+
       {/* Centered portfolio title */}
       <h1 className={styles.heading}>{portfolio.title}</h1>
-      
+
       {portfolio.description && (
         <p className={styles.description}>{portfolio.description}</p>
       )}
@@ -123,9 +133,7 @@ export default async function Portfolio({ params }) {
                     />
                   </div>
                 )}
-                <h3 className={styles.portfolioTitle}>
-                  {subPortfolio.title}
-                </h3>
+                <h3 className={styles.portfolioTitle}>{subPortfolio.title}</h3>
                 {subPortfolio.description && (
                   <p className={styles.portfolioDescription}>
                     {subPortfolio.description}
@@ -144,8 +152,7 @@ export default async function Portfolio({ params }) {
 
       {/* Show a message if no content */}
       {(!portfolio.artworks || portfolio.artworks.length === 0) &&
-        (!portfolio.subPortfolios ||
-          portfolio.subPortfolios.length === 0) && (
+        (!portfolio.subPortfolios || portfolio.subPortfolios.length === 0) && (
           <p className={styles.emptyMessage}>
             No artwork or collections in this portfolio yet.
           </p>

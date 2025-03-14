@@ -7,7 +7,8 @@
   }
   
   .breadcrumbs {
-    margin-bottom: 30px;
+    margin-top: 30px; /* Increase this value to move breadcrumbs down */
+    margin-bottom: 20px;
     color: #666;
     font-size: 16px;
   }

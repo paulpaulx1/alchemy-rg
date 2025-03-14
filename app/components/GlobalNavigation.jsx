@@ -41,6 +41,7 @@ function buildPortfolioTree(portfolios) {
   return rootPortfolios;
 }
 
+
 // This becomes a server component that fetches data server-side
 export default async function GlobalNavigation() {
   // Server-side data fetching
@@ -53,9 +54,28 @@ export default async function GlobalNavigation() {
     }
   `);
 
+  // Fetch artist for About page
+  const artist = await client.fetch(`
+    *[_type == "artist"][0] {
+      name
+    }
+  `);
+  
+  // Add an "About" item at the top level
+  const aboutItem = {
+    _id: 'about-page',
+    title: 'About',
+    slug: { current: 'about' },
+    subPortfolios: [],
+    isCustomRoute: true
+  };
+
   // Build the recursive tree structure
   const portfolioTree = buildPortfolioTree(allPortfolios);
+  
+  // Add the About item at the beginning of the array
+  const navItems = [aboutItem, ...portfolioTree];
 
   // Pass the pre-fetched data to the client component
-  return <NavigationButton portfolios={portfolioTree} />;
+  return <NavigationButton portfolios={navItems} />;
 }

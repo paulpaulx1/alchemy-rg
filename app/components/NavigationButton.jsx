@@ -138,38 +138,44 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
 }
 
 // Individual navigation item
+// In NavigationButton.jsx, update the NavItem component
 function NavItem({ portfolio, level }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
-  
-  return (
-    <li className={styles.navItem}>
-      <div className={styles.navItemHeader}>
-        <Link 
-          href={`/portfolio/${portfolio.slug.current}`}
-          className={styles.navLink}
-        >
-          {portfolio.title}
-        </Link>
-        
-        {hasSubPortfolios && (
-          <button 
-            className={`${styles.expandButton} ${isExpanded ? styles.expanded : ''}`}
-            onClick={() => setIsExpanded(!isExpanded)}
-            aria-expanded={isExpanded}
+    const [isExpanded, setIsExpanded] = useState(false);
+    const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
+    
+    // Determine the link path based on whether it's a custom route
+    const linkPath = portfolio.isCustomRoute 
+      ? `/${portfolio.slug.current}` 
+      : `/portfolio/${portfolio.slug.current}`;
+    
+    return (
+      <li className={styles.navItem}>
+        <div className={styles.navItemHeader}>
+          <Link 
+            href={linkPath}
+            className={styles.navLink}
           >
-            +
-          </button>
+            {portfolio.title}
+          </Link>
+          
+          {hasSubPortfolios && (
+            <button 
+              className={`${styles.expandButton} ${isExpanded ? styles.expanded : ''}`}
+              onClick={() => setIsExpanded(!isExpanded)}
+              aria-expanded={isExpanded}
+            >
+              +
+            </button>
+          )}
+        </div>
+        
+        {/* Recursive rendering of sub-portfolios */}
+        {hasSubPortfolios && isExpanded && (
+          <RecursiveNavMenu 
+            portfolios={portfolio.subPortfolios} 
+            level={level + 1} 
+          />
         )}
-      </div>
-      
-      {/* Recursive rendering of sub-portfolios */}
-      {hasSubPortfolios && isExpanded && (
-        <RecursiveNavMenu 
-          portfolios={portfolio.subPortfolios} 
-          level={level + 1} 
-        />
-      )}
-    </li>
-  );
-}
+      </li>
+    );
+  }
