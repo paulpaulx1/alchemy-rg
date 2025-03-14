@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <div className="site-wrapper">
           <header className="site-header">
-            <Link href="/" className="site-title">RAJ GUPTA</Link>
+            <Link href="/" className="site-title">Raj Gupta</Link>
             <GlobalNavigation/>
           </header>
           <main className="site-main">

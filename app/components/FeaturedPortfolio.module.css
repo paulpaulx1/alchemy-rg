@@ -26,8 +26,8 @@
 .imageCaption {
   position: fixed;
   bottom: 1.5rem;
-  left: 1.5rem;
-  font-size: 1.2rem;
+  font-size: 24px;
   z-index: 10;
-  color: black;
+  color: rgb(34, 34, 34);
+
 }

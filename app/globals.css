@@ -38,11 +38,10 @@ a {
 }
 
 .site-title {
-  font-size: 20px;
+  font-size: 24px;
   letter-spacing: 1px;
   text-decoration: none;
-  color: #000;
-  text-transform: uppercase;
+  color: #1a1a1a;
   font-weight: 500;
 }
 

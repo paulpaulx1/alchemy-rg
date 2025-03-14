@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import styles from './ArtworkGrid.module.css';
 
 export default function ArtworkGrid({ artworks }) {
@@ -11,6 +10,7 @@ export default function ArtworkGrid({ artworks }) {
   if (!artworks.length) {
     return <div className={styles.emptyMessage}>No artworks in this portfolio</div>;
   }
+  
   
   return (
     <>
@@ -22,29 +22,31 @@ export default function ArtworkGrid({ artworks }) {
             onClick={() => setSelectedArtwork(artwork)}
           >
             <div className={styles.imageContainer}>
-              {artwork.mediaType === 'image' ? (
-                <img
-                  src={artwork.lowResImageUrl}
-                  alt={artwork.title || 'Untitled artwork'}
-                  className={styles.thumbnail}
-                />
-              ) : (
-                // Video thumbnail
-                <div className={styles.videoThumbnail}>
-                  {artwork.videoThumbnailUrl ? (
-                    <img
-                      src={artwork.videoThumbnailUrl}
-                      alt={artwork.title || 'Untitled video'}
-                      className={styles.thumbnail}
-                    />
-                  ) : (
-                    <div className={styles.videoPlaceholder}>
-                      <span>Video</span>
-                    </div>
-                  )}
-                  <div className={styles.playButton}>▶</div>
-                </div>
-              )}
+              <div className={styles.innerContainer}>
+                {artwork.mediaType === 'image' ? (
+                  <img
+                    src={artwork.lowResImageUrl}
+                    alt={artwork.title || 'Untitled artwork'}
+                    className={styles.thumbnail}
+                  />
+                ) : (
+                  // Video thumbnail
+                  <div className={styles.videoThumbnail}>
+                    {artwork.videoThumbnailUrl ? (
+                      <img
+                        src={artwork.videoThumbnailUrl}
+                        alt={artwork.title || 'Untitled video'}
+                        className={styles.thumbnail}
+                      />
+                    ) : (
+                      <div className={styles.videoPlaceholder}>
+                        <span>Video</span>
+                      </div>
+                    )}
+                    <div className={styles.playButton}>▶</div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className={styles.artworkInfo}>
               <h3 className={styles.artworkTitle}>{artwork.title || 'Untitled'}</h3>
@@ -102,7 +104,6 @@ export default function ArtworkGrid({ artworks }) {
     </>
   );
 }
-
 // Helper function to get embed URL from video links
 function getEmbedUrl(url) {
   // YouTube

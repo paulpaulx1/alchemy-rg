@@ -26,45 +26,43 @@ export async function generateStaticParams() {
 }
 
 export default async function Portfolio({ params }) {
-  const resolvedParams = await params;
-  const {slug} = resolvedParams
-
+  const { slug } = params;
+  
   // Fetch portfolio data
-  // In app/portfolio/[slug]/page.js, modify the query:
   const portfolio = await client.fetch(
     `
-  *[_type == "portfolio" && slug.current == $slug][0] {
-    _id,
-    title,
-    description,
-    "parentPortfolio": parentPortfolio->{
-      title,
-      "slug": slug.current
-    },
-    "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
+    *[_type == "portfolio" && slug.current == $slug][0] {
       _id,
       title,
-      mediaType,
-      "slug": slug.current,
-      "imageUrl": image.asset->url,
-      "lowResImageUrl": lowResImage.asset->url,
-      "videoUrl": video.asset->url,
-      "videoThumbnailUrl": videoThumbnail.asset->url,
-      externalVideoUrl,
       description,
-      year,
-      medium,
-      dimensions
-    },
-    "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] {
-      _id,
-      title,
-      "slug": slug.current,
-      description,
-      "coverImageUrl": coverImage.asset->url
+      "parentPortfolio": parentPortfolio->{
+        title,
+        "slug": slug.current
+      },
+      "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
+        _id,
+        title,
+        mediaType,
+        "slug": slug.current,
+        "imageUrl": image.asset->url,
+        "lowResImageUrl": lowResImage.asset->url,
+        "videoUrl": video.asset->url,
+        "videoThumbnailUrl": videoThumbnail.asset->url,
+        externalVideoUrl,
+        description,
+        year,
+        medium,
+        dimensions
+      },
+      "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] {
+        _id,
+        title,
+        "slug": slug.current,
+        description,
+        "coverImageUrl": coverImage.asset->url
+      }
     }
-  }
-`,
+    `,
     { slug }
   );
 
@@ -81,11 +79,27 @@ export default async function Portfolio({ params }) {
 
   return (
     <div className={styles.container}>
-      {/* Breadcrumb navigation */}
-      <div className={styles.breadcrumbs}>{/* Same as before */}</div>
-
+      {/* Simplified breadcrumb - only show parent links */}
+      <div className={styles.breadcrumbs}>
+        <Link href="/" className={styles.breadcrumbLink}>
+          Home
+        </Link>
+        {portfolio.parentPortfolio && (
+          <>
+            <span className={styles.breadcrumbSeparator}>/</span>
+            <Link 
+              href={`/portfolio/${portfolio.parentPortfolio.slug}`}
+              className={styles.breadcrumbLink}
+            >
+              {portfolio.parentPortfolio.title}
+            </Link>
+          </>
+        )}
+      </div>
+      
+      {/* Centered portfolio title */}
       <h1 className={styles.heading}>{portfolio.title}</h1>
-
+      
       {portfolio.description && (
         <p className={styles.description}>{portfolio.description}</p>
       )}
@@ -109,7 +123,9 @@ export default async function Portfolio({ params }) {
                     />
                   </div>
                 )}
-                <h3 className={styles.portfolioTitle}>{subPortfolio.title}</h3>
+                <h3 className={styles.portfolioTitle}>
+                  {subPortfolio.title}
+                </h3>
                 {subPortfolio.description && (
                   <p className={styles.portfolioDescription}>
                     {subPortfolio.description}
@@ -128,7 +144,8 @@ export default async function Portfolio({ params }) {
 
       {/* Show a message if no content */}
       {(!portfolio.artworks || portfolio.artworks.length === 0) &&
-        (!portfolio.subPortfolios || portfolio.subPortfolios.length === 0) && (
+        (!portfolio.subPortfolios ||
+          portfolio.subPortfolios.length === 0) && (
           <p className={styles.emptyMessage}>
             No artwork or collections in this portfolio yet.
           </p>

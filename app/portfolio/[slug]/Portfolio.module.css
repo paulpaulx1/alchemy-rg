@@ -25,14 +25,11 @@
     margin: 0 8px;
   }
   
-  .breadcrumbCurrent {
-    font-weight: 500;
-  }
-  
   .heading {
     font-size: 24px;
     font-weight: 500;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
+    text-align: center;
     font-family: 'EB Garamond', serif;
   }
   
@@ -42,10 +39,75 @@
     color: #333;
     margin-bottom: 30px;
     max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+  
+  .subHeading {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .portfolioGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+  
+  .portfolioCard {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .portfolioImage {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  
+  .portfolioImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .portfolioTitle {
+    font-size: 18px;
+    font-weight: normal;
+    margin-bottom: 5px;
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .portfolioDescription {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+  }
+  
+  .emptyMessage {
+    text-align: center;
+    margin-top: 60px;
+    color: #666;
+    font-family: 'EB Garamond', serif;
+    font-size: 18px;
   }
   
   .link {
     color: #000;
     text-decoration: underline;
     font-size: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    .portfolioGrid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+    }
   }
