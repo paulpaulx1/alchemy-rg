@@ -252,10 +252,7 @@
   /* Media queries for responsive grid */
   @media (min-width: 1400px) {
 
-    .imageContainer {
-      /* Make images larger on big screens */
-      padding-top: 55vw; /* This creates a larger aspect ratio container */
-    }
+
   }
   
   @media (max-width: 1200px) {
