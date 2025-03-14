@@ -10,7 +10,7 @@
     letter-spacing: 1px;
     cursor: pointer;
     z-index: 50;
-    color: #1a1a1a;
+    color: #373737;
   }
   
   .navigationPanel {
@@ -44,7 +44,7 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #1a1a1a;
+    color: #373737;
     font-family: 'EB Garamond', serif;
   }
   
@@ -79,7 +79,7 @@
   
   .navLink {
     text-decoration: none;
-    color: #1a1a1a;
+    color: #373737;
     font-size: 24px;
     letter-spacing: 0.5px;
   }
@@ -93,7 +93,7 @@
     border: none;
     font-size: 17px;
     cursor: pointer;
-    color: #1a1a1a;
+    color: #373737;
     padding: 0 5px;
     font-family: 'EB Garamond', serif;
   }
@@ -105,5 +105,55 @@
   .navText {
     font-size: 17px;
     letter-spacing: 0.5px;
-    color: #1a1a1a;
+    color: #373737;
   }
+
+  /* Update in your NavigationButton.module.css */
+
+/* First, let's create an overlay that covers the viewport */
+.navigationOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.85); /* Transparent white */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 90; /* Below the navigation panel but above other content */
+  }
+  
+  .navigationOverlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Now let's adjust the navigation panel */
+  .navigationPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px; /* Wider on large screens */
+    max-width: 90vw; /* Prevents being too wide on smaller screens */
+    height: 100vh;
+    background-color: #fff;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 100;
+    overflow-y: auto;
+    box-shadow: -1px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navigationPanel.open {
+    transform: translateX(0);
+  }
+  
+  /* Media query for mobile devices */
+  @media (max-width: 480px) {
+    .navigationPanel {
+      width: 100%; /* Full width on mobile */
+      max-width: 100%;
+    }
+  }
+  

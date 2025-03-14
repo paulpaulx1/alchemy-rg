@@ -10,7 +10,7 @@
     letter-spacing: 1px;
     cursor: pointer;
     z-index: 50;
-    color: #1a1a1a;
+    color: #373737;
     font-weight: 500;
   }
   
@@ -45,7 +45,7 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #1a1a1a;
+    color: #373737;
     font-family: 'EB Garamond', serif;
   }
   
@@ -80,7 +80,7 @@
   
   .navLink {
     text-decoration: none;
-    color: #1a1a1a;
+    color: #373737;
     font-size: 17px;
     letter-spacing: 0.5px;
   }
@@ -94,7 +94,7 @@
     border: none;
     font-size: 17px;
     cursor: pointer;
-    color: #1a1a1a;
+    color: #373737;
     padding: 0 5px;
     font-family: 'EB Garamond', serif;
   }
@@ -106,6 +106,6 @@
   .navText {
     font-size: 17px;
     letter-spacing: 0.5px;
-    color: #1a1a1a;
+    color: #373737;
     cursor: default;
   }
