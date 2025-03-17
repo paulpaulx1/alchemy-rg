@@ -105,7 +105,7 @@ export default function FeaturedPortfolio({ artworks }) {
     if (validArtworks.length <= 1) return;
     
     const fadeTime = 2000;      // Fade transition time
-    const displayTime = 5000;   // Time at full opacity
+    const displayTime = 3700;   // Time at full opacity
     
     // Schedule the next transition after fade-in completes plus display time
     safeTimeout(() => {
