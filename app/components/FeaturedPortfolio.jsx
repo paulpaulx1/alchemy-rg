@@ -90,13 +90,6 @@ export default function FeaturedPortfolio({ artworks }) {
     imgB.style.objectFit = 'cover';
     artworkB.appendChild(imgB);
     
-    // Create caption element
-    const captionElement = document.createElement('div');
-    captionElement.className = styles.imageCaption;
-    captionElement.style.opacity = '0';
-    captionElement.style.transition = 'opacity 2s ease-in';
-    container.appendChild(captionElement);
-    
     // Track which container is active
     let activeContainer = 'A';
     
@@ -114,7 +107,7 @@ export default function FeaturedPortfolio({ artworks }) {
     };
     
     // Set image to container and calculate size
-    const setImageToContainer = (container, img, artwork, url, title) => {
+    const setImageToContainer = (container, img, artwork, url) => {
       return new Promise((resolve) => {
         // Load image to get dimensions
         const tempImg = new Image();
@@ -142,10 +135,7 @@ export default function FeaturedPortfolio({ artworks }) {
           artwork.style.width = `${width}px`;
           artwork.style.height = `${height}px`;
           img.src = url;
-          img.alt = title || "Artwork";
-          
-          // Update caption
-          captionElement.textContent = title || '';
+          img.alt = "Artwork";
           
           resolve();
         };
@@ -182,8 +172,7 @@ export default function FeaturedPortfolio({ artworks }) {
         activeContainer === 'A' ? imageContainerA : imageContainerB,
         activeImg,
         activeArtwork,
-        artwork.image.asset.url,
-        artwork.title
+        artwork.image.asset.url
       );
       
       // Ensure blur is applied initially
@@ -191,10 +180,9 @@ export default function FeaturedPortfolio({ artworks }) {
       
       // Add a delay before starting fade in
       setTimeout(() => {
-        // Fade in active container and caption
+        // Fade in active container
         activeArtwork.style.opacity = '1';
         activeArtwork.style.filter = 'blur(0px)';
-        captionElement.style.opacity = '1';
         
         // If only one image, we're done
         if (validArtworks.length <= 1) {
@@ -213,21 +201,18 @@ export default function FeaturedPortfolio({ artworks }) {
             activeContainer === 'A' ? imageContainerB : imageContainerA,
             inactiveImg,
             inactiveArtwork,
-            nextArtwork.image.asset.url,
-            nextArtwork.title
+            nextArtwork.image.asset.url
           );
           
-          // Start fading out active container and caption
+          // Start fading out active container
           activeArtwork.style.opacity = '0';
           activeArtwork.style.filter = 'blur(10px)';
-          captionElement.style.opacity = '0';
           
           // When active image is partially faded out, start fading in the next image
           addTimeout(() => {
-            // Fade in inactive container and caption
+            // Fade in inactive container
             inactiveArtwork.style.opacity = '1';
             inactiveArtwork.style.filter = 'blur(0px)';
-            captionElement.style.opacity = '1';
             
             // After fade in completes, swap containers and continue
             addTimeout(() => {
