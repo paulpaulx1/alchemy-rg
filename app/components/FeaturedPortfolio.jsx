@@ -95,10 +95,10 @@ export default function FeaturedPortfolio({ artworks }) {
     clearAllTimeouts();
     
     // Improved transition timing
-    const transitionIn = 1000; // slower fade-in for smoother perception
+    const transitionIn = 1200; // slower fade-in for smoother perception
     const blendTime = 1000;    // longer overlap between low-res and high-res
     const displayTime = 4000;  // longer display time for each image
-    const transitionOut = 1500; // slower fade-out
+    const transitionOut = 2000; // slower fade-out
     
     // If this is the initial load
     if (isInitialLoadRef.current) {
@@ -140,7 +140,7 @@ export default function FeaturedPortfolio({ artworks }) {
       // For subsequent transitions - smoother sequence
       
       // Start with low-res image fading in
-      setLowResOpacity(1);
+      setLowResOpacity(.8);
       setHighResOpacity(0);
       
       // Begin fading in high-res while low-res is still visible
@@ -149,7 +149,7 @@ export default function FeaturedPortfolio({ artworks }) {
         
         // Only start fading out low-res after high-res has had time to appear
         safeTimeout(() => {
-          setLowResOpacity(0);
+          setLowResOpacity(.1);
           
           // Display the high-res image for a while
           safeTimeout(() => {
@@ -231,7 +231,7 @@ export default function FeaturedPortfolio({ artworks }) {
               className={styles.artwork}
               style={{
                 opacity: highResOpacity,
-                transition: "opacity .5s ease-in-out", 
+                transition: "opacity 1.1s", 
                 width: `${imageSize.width}px`,
                 height: `${imageSize.height}px`,
               }}
