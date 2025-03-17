@@ -21,6 +21,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
+  will-change: opacity; /* Optimize for animation performance */
 }
 
 .imageCaption {
@@ -30,5 +31,8 @@
   z-index: 10;
   color: rgb(34, 34, 34);
   font-style: italic;
-
+  text-align: center;
+  width: 100%;
+  padding: 0 20px;
+  will-change: opacity; /* Optimize for animation performance */
 }

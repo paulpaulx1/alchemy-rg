@@ -9,8 +9,6 @@ export default function FeaturedPortfolio({ artworks }) {
     (artwork) => artwork?.image?.asset?.url && artwork?.lowResImage?.asset?.url
   );
   
-  console.log(`Found ${validArtworks.length} valid artworks out of ${artworks.length}`);
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lowResOpacity, setLowResOpacity] = useState(0);
   const [highResOpacity, setHighResOpacity] = useState(0);
@@ -79,7 +77,7 @@ export default function FeaturedPortfolio({ artworks }) {
     };
   }, [currentArtwork]);
 
-  // The main sequence effect
+  // The main sequence effect - improved for smoother transitions
   useEffect(() => {
     // Skip if no valid images or no dimensions calculated yet
     if (!validArtworks.length || !imageSize.width) {
@@ -93,12 +91,16 @@ export default function FeaturedPortfolio({ artworks }) {
       return;
     }
     
-    console.log(`Starting sequence for image ${currentIndex} of ${validArtworks.length}`);
-    
     // Clear any existing timeouts to prevent overlapping sequences
     clearAllTimeouts();
     
-    // If this is the initial load, start directly with step 1
+    // Improved transition timing
+    const transitionIn = 1800; // slower fade-in for smoother perception
+    const blendTime = 1500;    // longer overlap between low-res and high-res
+    const displayTime = 5000;  // longer display time for each image
+    const transitionOut = 1500; // slower fade-out
+    
+    // If this is the initial load
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       
@@ -106,69 +108,62 @@ export default function FeaturedPortfolio({ artworks }) {
       setLowResOpacity(0);
       setHighResOpacity(0);
       
-      // Show low-res first
+      // Start sequence - more gradual now
+      
+      // First, fade in low-res image
       safeTimeout(() => {
-        console.log("Showing low-res image");
         setLowResOpacity(1);
         
-        // Then fade in high-res
+        // Begin fading in high-res while low-res is still visible
         safeTimeout(() => {
-          console.log("Showing high-res image");
           setHighResOpacity(1);
           
-          // Then fade out low-res
+          // Only start fading out low-res after high-res has had time to appear
           safeTimeout(() => {
-            console.log("Hiding low-res image");
             setLowResOpacity(0);
             
-            // Wait a while, then prepare for next image
+            // Display the high-res image for a while
             safeTimeout(() => {
-              console.log("Starting fade out to next image");
+              // Begin transition to next image
               setHighResOpacity(0);
               
               // After fade-out completes, move to next image
               safeTimeout(() => {
-                console.log("Moving to next image");
                 const nextIndex = (currentIndex + 1) % validArtworks.length;
                 setCurrentIndex(nextIndex);
-                // The effect will run again with the new currentIndex
-              }, 1000);
-            }, 4000);
-          }, 1000);
-        }, 1000);
-      }, 100);
+              }, transitionOut);
+            }, displayTime);
+          }, blendTime);
+        }, transitionIn);
+      }, 300);
     } else {
-      // For subsequent transitions, start with low-res of the new image
+      // For subsequent transitions - smoother sequence
       
-      // Start by showing the low-res image
+      // Start with low-res image fading in
       setLowResOpacity(1);
       setHighResOpacity(0);
       
-      // Then fade in high-res
+      // Begin fading in high-res while low-res is still visible
       safeTimeout(() => {
-        console.log("Showing high-res image");
         setHighResOpacity(1);
         
-        // Then fade out low-res
+        // Only start fading out low-res after high-res has had time to appear
         safeTimeout(() => {
-          console.log("Hiding low-res image");
           setLowResOpacity(0);
           
-          // Wait a while, then prepare for next image
+          // Display the high-res image for a while
           safeTimeout(() => {
-            console.log("Starting fade out to next image");
+            // Begin transition to next image
             setHighResOpacity(0);
             
             // After fade-out completes, move to next image
             safeTimeout(() => {
-              console.log("Moving to next image");
               const nextIndex = (currentIndex + 1) % validArtworks.length;
               setCurrentIndex(nextIndex);
-              // The effect will run again with the new currentIndex
-            }, 1000);
-          }, 4000);
-        }, 1000);
-      }, 1000);
+            }, transitionOut);
+          }, displayTime);
+        }, blendTime);
+      }, transitionIn);
     }
     
     // Clean up all timeouts when the effect re-runs or component unmounts
@@ -214,7 +209,7 @@ export default function FeaturedPortfolio({ artworks }) {
               className={styles.artwork}
               style={{
                 opacity: lowResOpacity,
-                transition: "opacity 1s ease-in-out",
+                transition: "opacity 1.8s ease-in-out", // Longer, smoother transition
                 width: `${imageSize.width}px`,
                 height: `${imageSize.height}px`,
               }}
@@ -226,7 +221,7 @@ export default function FeaturedPortfolio({ artworks }) {
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
-                  filter: "blur(5px)",
+                  filter: "blur(8px)", // Slightly stronger blur for better effect
                 }}
               />
             </div>
@@ -236,7 +231,7 @@ export default function FeaturedPortfolio({ artworks }) {
               className={styles.artwork}
               style={{
                 opacity: highResOpacity,
-                transition: "opacity 1s ease-in-out",
+                transition: "opacity 2.2s ease-in-out", // Even slower for high-res to create smoother blend
                 width: `${imageSize.width}px`,
                 height: `${imageSize.height}px`,
               }}
@@ -256,27 +251,11 @@ export default function FeaturedPortfolio({ artworks }) {
         className={styles.imageCaption}
         style={{
           opacity: lowResOpacity || highResOpacity ? 1 : 0,
-          transition: "opacity 1s ease-in-out",
+          transition: "opacity 1.5s ease-in-out",
         }}
       >
         {currentArtwork?.title}
       </div>
-      
-      {/* Debug indicator - uncomment if needed */}
-      {/*
-      <div style={{
-        position: "fixed",
-        top: "10px",
-        left: "10px",
-        background: "rgba(0,0,0,0.7)",
-        color: "white",
-        padding: "10px",
-        fontSize: "12px",
-        zIndex: 1000
-      }}>
-        Image: {currentIndex + 1} of {validArtworks.length}
-      </div>
-      */}
     </div>
   );
 }

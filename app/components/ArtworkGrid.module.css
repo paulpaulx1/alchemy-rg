@@ -10,6 +10,7 @@
     margin-left: auto;
     margin-right: auto;
     padding: 0 2vw; /* Small side padding */
+
 }
   
 .gridItem {
@@ -306,3 +307,14 @@
         padding-top: 70%; /* More rectangular for better viewing */
     }
 }
+
+.singleItemGrid {
+    grid-template-columns: minmax(0, 600px); /* Single column with max width */
+    justify-content: center;
+  }
+  
+  @media (max-width: 767px) {
+    .singleItemGrid {
+      grid-template-columns: minmax(0, 400px);
+    }
+  }

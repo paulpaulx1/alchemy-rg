@@ -33,9 +33,12 @@ export default function ArtworkGrid({ artworks }) {
     selectArtworkByIndex(newIndex);
   };
 
+  const isSingleArtwork = artworks.length === 1;
+
   return (
     <>
-      <div className={styles.grid}>
+          <div className={`${styles.grid} ${isSingleArtwork ? styles.singleItemGrid : ''}`}>
+
         {artworks.map((artwork, index) => (
           <div
             key={artwork._id}

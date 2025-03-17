@@ -82,6 +82,10 @@ export default async function Portfolio({ params }) {
     );
   }
 
+  // Determine if we need to show collections heading
+  const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
+  const showCollectionsHeading = hasSubPortfolios;
+
   return (
     <div className={styles.container}>
       {/* Simplified breadcrumb - only show parent links */}
@@ -110,14 +114,19 @@ export default async function Portfolio({ params }) {
       {/* Centered portfolio title */}
       <h1 className={styles.heading}>{portfolio.title}</h1>
 
-      {portfolio.description && (
+      {/* Only show description if it's not just repeating the title */}
+      {portfolio.description && 
+       !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
         <p className={styles.description}>{portfolio.description}</p>
       )}
 
       {/* Show sub-portfolios if they exist */}
-      {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
+      {hasSubPortfolios && (
         <div className={styles.subPortfolioList}>
-          <h2 className={styles.subHeading}>Collections</h2>
+          {/* Only show Collections heading if there are sub-portfolios */}
+          {showCollectionsHeading && (
+            <h2 className={styles.subHeading}>Collections</h2>
+          )}
           <div className={styles.portfolioGrid}>
             {portfolio.subPortfolios.map((subPortfolio) => (
               <Link
@@ -134,7 +143,9 @@ export default async function Portfolio({ params }) {
                   </div>
                 )}
                 <h3 className={styles.portfolioTitle}>{subPortfolio.title}</h3>
-                {subPortfolio.description && (
+                {/* Only show description if it exists AND doesn't just repeat the portfolio name */}
+                {subPortfolio.description && 
+                 !subPortfolio.description.includes(`Portfolio: ${subPortfolio.title}`) && (
                   <p className={styles.portfolioDescription}>
                     {subPortfolio.description}
                   </p>
