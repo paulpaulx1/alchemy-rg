@@ -95,9 +95,9 @@ export default function FeaturedPortfolio({ artworks }) {
     clearAllTimeouts();
     
     // Improved transition timing
-    const transitionIn = 1800; // slower fade-in for smoother perception
-    const blendTime = 1500;    // longer overlap between low-res and high-res
-    const displayTime = 5000;  // longer display time for each image
+    const transitionIn = 1000; // slower fade-in for smoother perception
+    const blendTime = 1000;    // longer overlap between low-res and high-res
+    const displayTime = 4000;  // longer display time for each image
     const transitionOut = 1500; // slower fade-out
     
     // If this is the initial load
@@ -209,7 +209,7 @@ export default function FeaturedPortfolio({ artworks }) {
               className={styles.artwork}
               style={{
                 opacity: lowResOpacity,
-                transition: "opacity 1.8s ease-in-out", // Longer, smoother transition
+                transition: "opacity 1.5s ease-in-out", // Longer, smoother transition
                 width: `${imageSize.width}px`,
                 height: `${imageSize.height}px`,
               }}
@@ -231,7 +231,7 @@ export default function FeaturedPortfolio({ artworks }) {
               className={styles.artwork}
               style={{
                 opacity: highResOpacity,
-                transition: "opacity 2.2s ease-in-out", // Even slower for high-res to create smoother blend
+                transition: "opacity .5s ease-in-out", 
                 width: `${imageSize.width}px`,
                 height: `${imageSize.height}px`,
               }}
