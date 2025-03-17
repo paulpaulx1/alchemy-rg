@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./FeaturedPortfolio.module.css";
 
 export default function FeaturedPortfolio({ artworks }) {
@@ -9,11 +9,34 @@ export default function FeaturedPortfolio({ artworks }) {
     (artwork) => artwork?.image?.asset?.url
   );
   
+  // State for component key to force full remount
+  const [componentKey, setComponentKey] = useState(0);
+  
   // Refs for DOM elements and state
   const containerRef = useRef(null);
   const indexRef = useRef(0);
   const timeoutsRef = useRef([]);
   const isRunningRef = useRef(false);
+  const cleanupFunctionRef = useRef(null);
+  
+  // Force remount when navigating back to page
+  useEffect(() => {
+    // Reset the component when it mounts
+    indexRef.current = 0;
+    isRunningRef.current = false;
+    
+    // Force remount when the component becomes visible after navigation
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isRunningRef.current) {
+        setComponentKey(prev => prev + 1);
+      }
+    };
+    
+    window.addEventListener('focus', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, []);
   
   useEffect(() => {
     // Don't do anything if no artworks
@@ -23,8 +46,10 @@ export default function FeaturedPortfolio({ artworks }) {
     const container = containerRef.current;
     if (!container) return;
     
-    // Clear existing content
+    // Clear existing content and timeouts
     container.innerHTML = '';
+    timeoutsRef.current.forEach(id => clearTimeout(id));
+    timeoutsRef.current = [];
     
     // Create two permanent image containers
     const imageContainerA = document.createElement('div');
@@ -64,6 +89,13 @@ export default function FeaturedPortfolio({ artworks }) {
     imgB.style.height = '100%';
     imgB.style.objectFit = 'cover';
     artworkB.appendChild(imgB);
+    
+    // Create caption element
+    const captionElement = document.createElement('div');
+    captionElement.className = styles.imageCaption;
+    captionElement.style.opacity = '0';
+    captionElement.style.transition = 'opacity 2s ease-in';
+    container.appendChild(captionElement);
     
     // Track which container is active
     let activeContainer = 'A';
@@ -112,6 +144,9 @@ export default function FeaturedPortfolio({ artworks }) {
           img.src = url;
           img.alt = title || "Artwork";
           
+          // Update caption
+          captionElement.textContent = title || '';
+          
           resolve();
         };
         
@@ -156,9 +191,10 @@ export default function FeaturedPortfolio({ artworks }) {
       
       // Add a delay before starting fade in
       setTimeout(() => {
-        // Fade in active container
+        // Fade in active container and caption
         activeArtwork.style.opacity = '1';
         activeArtwork.style.filter = 'blur(0px)';
+        captionElement.style.opacity = '1';
         
         // If only one image, we're done
         if (validArtworks.length <= 1) {
@@ -181,15 +217,17 @@ export default function FeaturedPortfolio({ artworks }) {
             nextArtwork.title
           );
           
-          // Start fading out active container
+          // Start fading out active container and caption
           activeArtwork.style.opacity = '0';
           activeArtwork.style.filter = 'blur(10px)';
+          captionElement.style.opacity = '0';
           
           // When active image is partially faded out, start fading in the next image
           addTimeout(() => {
-            // Fade in inactive container
+            // Fade in inactive container and caption
             inactiveArtwork.style.opacity = '1';
             inactiveArtwork.style.filter = 'blur(0px)';
+            captionElement.style.opacity = '1';
             
             // After fade in completes, swap containers and continue
             addTimeout(() => {
@@ -211,6 +249,7 @@ export default function FeaturedPortfolio({ artworks }) {
       if (document.visibilityState === 'visible') {
         if (!isRunningRef.current) {
           // Resume slideshow if not running
+          clearAllTimeouts();
           startSlideshow();
         }
       } else {
@@ -225,12 +264,28 @@ export default function FeaturedPortfolio({ artworks }) {
     // Start the slideshow
     startSlideshow();
     
-    // Cleanup
-    return () => {
+    // Store cleanup function
+    cleanupFunctionRef.current = () => {
       clearAllTimeouts();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [validArtworks]);
+    
+    // Cleanup
+    return () => {
+      if (cleanupFunctionRef.current) {
+        cleanupFunctionRef.current();
+      }
+    };
+  }, [validArtworks, componentKey]); // Added componentKey as dependency
+  
+  // Clean up when unmounting
+  useEffect(() => {
+    return () => {
+      if (cleanupFunctionRef.current) {
+        cleanupFunctionRef.current();
+      }
+    };
+  }, []);
   
   return (
     <div ref={containerRef} className={styles.container}>
