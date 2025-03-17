@@ -6,17 +6,16 @@ import styles from "./FeaturedPortfolio.module.css";
 export default function FeaturedPortfolio({ artworks }) {
   // Filter valid artworks
   const validArtworks = artworks.filter(
-    (artwork) => artwork?.image?.asset?.url && artwork?.lowResImage?.asset?.url
+    (artwork) => artwork?.image?.asset?.url
   );
   
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lowResOpacity, setLowResOpacity] = useState(0);
-  const [highResOpacity, setHighResOpacity] = useState(0);
+  const [imageVisible, setImageVisible] = useState(false);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   
-  // Avoid using state for transition tracking - use refs instead
-  const isInitialLoadRef = useRef(true);
+  // Refs for tracking state and timeouts
   const timeoutsRef = useRef([]);
+  const documentVisibleRef = useRef(true);
   
   const currentArtwork = validArtworks[currentIndex];
   
@@ -77,107 +76,76 @@ export default function FeaturedPortfolio({ artworks }) {
     };
   }, [currentArtwork]);
 
-  // The main sequence effect - improved for smoother transitions
+  // Handle visibility change (tab switching)
   useEffect(() => {
-    // Skip if no valid images or no dimensions calculated yet
-    if (!validArtworks.length || !imageSize.width) {
-      return;
-    }
-    
-    // Skip if only one image (no need to transition)
-    if (validArtworks.length <= 1) {
-      setLowResOpacity(0);
-      setHighResOpacity(1);
-      return;
-    }
-    
-    // Clear any existing timeouts to prevent overlapping sequences
-    clearAllTimeouts();
-    
-    // Improved transition timing
-    const transitionIn = 1200; // slower fade-in for smoother perception
-    const blendTime = 1000;    // longer overlap between low-res and high-res
-    const displayTime = 4000;  // longer display time for each image
-    const transitionOut = 2000; // slower fade-out
-    
-    // If this is the initial load
-    if (isInitialLoadRef.current) {
-      isInitialLoadRef.current = false;
+    const handleVisibilityChange = () => {
+      documentVisibleRef.current = document.visibilityState === 'visible';
       
-      // Reset both opacities
-      setLowResOpacity(0);
-      setHighResOpacity(0);
-      
-      // Start sequence - more gradual now
-      
-      // First, fade in low-res image
-      safeTimeout(() => {
-        setLowResOpacity(1);
-        
-        // Begin fading in high-res while low-res is still visible
-        safeTimeout(() => {
-          setHighResOpacity(1);
-          
-          // Only start fading out low-res after high-res has had time to appear
-          safeTimeout(() => {
-            setLowResOpacity(0);
-            
-            // Display the high-res image for a while
-            safeTimeout(() => {
-              // Begin transition to next image
-              setHighResOpacity(0);
-              
-              // After fade-out completes, move to next image
-              safeTimeout(() => {
-                const nextIndex = (currentIndex + 1) % validArtworks.length;
-                setCurrentIndex(nextIndex);
-              }, transitionOut);
-            }, displayTime);
-          }, blendTime);
-        }, transitionIn);
-      }, 300);
-    } else {
-      // For subsequent transitions - smoother sequence
-      
-      // Start with low-res image fading in
-      setLowResOpacity(.8);
-      setHighResOpacity(0);
-      
-      // Begin fading in high-res while low-res is still visible
-      safeTimeout(() => {
-        setHighResOpacity(1);
-        
-        // Only start fading out low-res after high-res has had time to appear
-        safeTimeout(() => {
-          setLowResOpacity(.1);
-          
-          // Display the high-res image for a while
-          safeTimeout(() => {
-            // Begin transition to next image
-            setHighResOpacity(0);
-            
-            // After fade-out completes, move to next image
-            safeTimeout(() => {
-              const nextIndex = (currentIndex + 1) % validArtworks.length;
-              setCurrentIndex(nextIndex);
-            }, transitionOut);
-          }, displayTime);
-        }, blendTime);
-      }, transitionIn);
-    }
-    
-    // Clean up all timeouts when the effect re-runs or component unmounts
-    return () => {
-      clearAllTimeouts();
+      if (documentVisibleRef.current) {
+        // Reset the sequence when tab becomes visible again
+        clearAllTimeouts();
+        showCurrentImage();
+      } else {
+        // Pause transitions when tab is not visible
+        clearAllTimeouts();
+      }
     };
-  }, [currentIndex, validArtworks.length, imageSize.width]);
-  
-  // Clean up on unmount
-  useEffect(() => {
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
-      clearAllTimeouts();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  // Show current image then schedule next transition
+  const showCurrentImage = () => {
+    setImageVisible(true);
+    
+    if (validArtworks.length <= 1) return;
+    
+    const fadeTime = 2000;      // Fade transition time
+    const displayTime = 5000;   // Time at full opacity
+    
+    // Schedule the next transition after fade-in completes plus display time
+    safeTimeout(() => {
+      hideAndAdvance();
+    }, fadeTime + displayTime);
+  };
+  
+  // Hide current image and advance to next
+  const hideAndAdvance = () => {
+    setImageVisible(false);
+    
+    const fadeTime = 2000;
+    
+    safeTimeout(() => {
+      const nextIndex = (currentIndex + 1) % validArtworks.length;
+      setCurrentIndex(nextIndex);
+      
+      // Preload next image and perform fade-in after a short delay
+      safeTimeout(() => {
+        showCurrentImage();
+      }, 200);
+    }, fadeTime);
+  };
+
+  // Start the initial fade-in once the image is loaded and sized
+  useEffect(() => {
+    if (!validArtworks.length || !imageSize.width || !documentVisibleRef.current) {
+      return;
+    }
+    
+    // Clear any existing timeouts
+    clearAllTimeouts();
+    
+    // Start with initial fade-in
+    safeTimeout(() => {
+      showCurrentImage();
+    }, 500);
+    
+    return () => clearAllTimeouts();
+  }, [imageSize.width]);
 
   // Preload next image for smoother transitions
   useEffect(() => {
@@ -187,11 +155,8 @@ export default function FeaturedPortfolio({ artworks }) {
     const nextArtwork = validArtworks[nextIndex];
     
     if (nextArtwork) {
-      const highResImg = new Image();
-      highResImg.src = nextArtwork.image.asset.url;
-      
-      const lowResImg = new Image();
-      lowResImg.src = nextArtwork.lowResImage.asset.url;
+      const img = new Image();
+      img.src = nextArtwork.image.asset.url;
     }
   }, [currentIndex, validArtworks]);
 
@@ -199,60 +164,41 @@ export default function FeaturedPortfolio({ artworks }) {
     return <div className={styles.container}>No images available</div>;
   }
 
+  // CSS for transitions
+  const imageStyle = {
+    opacity: imageVisible ? 1 : 0,
+    filter: imageVisible ? 'blur(0px)' : 'blur(10px)',
+    transition: 'opacity 2s linear, filter 2s linear',
+    width: `${imageSize.width}px`,
+    height: `${imageSize.height}px`,
+  };
+
+  const captionStyle = {
+    opacity: imageVisible ? 1 : 0,
+    transition: 'opacity 2s linear',
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.imageContainer}>
         {imageSize.width > 0 && currentArtwork && (
-          <>
-            {/* Low-res image */}
-            <div
-              className={styles.artwork}
-              style={{
-                opacity: lowResOpacity,
-                transition: "opacity 1.5s ease-in-out", // Longer, smoother transition
-                width: `${imageSize.width}px`,
-                height: `${imageSize.height}px`,
-              }}
-            >
-              <img
-                src={currentArtwork.lowResImage.asset.url}
-                alt={currentArtwork.title || "Artwork"}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  filter: "blur(8px)", // Slightly stronger blur for better effect
-                }}
-              />
-            </div>
-
-            {/* High-res image */}
-            <div
-              className={styles.artwork}
-              style={{
-                opacity: highResOpacity,
-                transition: "opacity 1.1s", 
-                width: `${imageSize.width}px`,
-                height: `${imageSize.height}px`,
-              }}
-            >
-              <img
-                src={currentArtwork.image.asset.url}
-                alt={currentArtwork.title || "Artwork"}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-          </>
+          <div
+            className={styles.artwork}
+            style={imageStyle}
+          >
+            <img
+              src={currentArtwork.image.asset.url}
+              alt={currentArtwork.title || "Artwork"}
+              style={{ width: "100%", height: "100%"}}
+            />
+          </div>
         )}
       </div>
 
       {/* Caption */}
       <div
         className={styles.imageCaption}
-        style={{
-          opacity: lowResOpacity || highResOpacity ? 1 : 0,
-          transition: "opacity 1.5s ease-in-out",
-        }}
+        style={captionStyle}
       >
         {currentArtwork?.title}
       </div>
