@@ -11,9 +11,9 @@
     cursor: pointer;
     z-index: 50;
     color: #373737;
-  }
+}
   
-  .navigationPanel {
+.navigationPanel {
     position: fixed;
     top: 0;
     right: 0;
@@ -25,18 +25,18 @@
     z-index: 100;
     overflow-y: auto;
     box-shadow: -1px 0 10px rgba(0, 0, 0, 0.1);
-  }
+}
   
-  .navigationPanel.open {
+.navigationPanel.open {
     transform: translateX(0);
-  }
+}
   
-  .navigationInner {
+.navigationInner {
     padding: 60px 30px 40px;
     height: 100%;
-  }
+}
   
-  .closeButton {
+.closeButton {
     position: absolute;
     top: 20px;
     right: 20px;
@@ -46,49 +46,62 @@
     cursor: pointer;
     color: #373737;
     font-family: 'EB Garamond', serif;
-  }
+}
   
-  .navList {
+.navList {
     list-style: none;
     padding: 0;
     margin: 0;
-  }
+}
   
-  .level0 {
+.level0 {
     margin-top: 20px;
-  }
+}
+
+/* Add borders to parent portfolio items only */
+.level0 > .navItem {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+/* No border on the last parent item */
+.level0 > .navItem:last-child {
+    border-bottom: none;
+}
   
-  .level1 {
+.level1 {
     margin-left: 15px;
-  }
+    margin-top: 10px;
+}
   
-  .level2, .level3 {
+.level2, .level3 {
     margin-left: 15px;
-  }
+}
   
-  .navItem {
+.navItem {
     margin-bottom: 12px;
     font-family: 'EB Garamond', serif;
-  }
+}
   
-  .navItemHeader {
+.navItemHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
+}
   
-  .navLink {
+.navLink {
     text-decoration: none;
     color: #373737;
     font-size: 24px;
     letter-spacing: 0.5px;
-  }
+}
   
-  .navLink:hover {
+.navLink:hover {
     text-decoration: underline;
-  }
+}
   
-  .expandButton {
+.expandButton {
     background: transparent;
     border: none;
     font-size: 17px;
@@ -96,19 +109,19 @@
     color: #373737;
     padding: 0 5px;
     font-family: 'EB Garamond', serif;
-  }
+}
   
-  .expandButton.expanded {
+.expandButton.expanded {
     transform: rotate(45deg);
-  }
+}
   
-  .navText {
+.navText {
     font-size: 17px;
     letter-spacing: 0.5px;
     color: #373737;
-  }
+}
 
-  /* Update in your NavigationButton.module.css */
+/* Update in your NavigationButton.module.css */
 
 /* First, let's create an overlay that covers the viewport */
 .navigationOverlay {
@@ -122,15 +135,15 @@
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 90; /* Below the navigation panel but above other content */
-  }
+}
   
-  .navigationOverlay.open {
+.navigationOverlay.open {
     opacity: 1;
     visibility: visible;
-  }
+}
   
-  /* Now let's adjust the navigation panel */
-  .navigationPanel {
+/* Now let's adjust the navigation panel */
+.navigationPanel {
     position: fixed;
     top: 0;
     right: 0;
@@ -143,17 +156,16 @@
     z-index: 100;
     overflow-y: auto;
     box-shadow: -1px 0 10px rgba(0, 0, 0, 0.1);
-  }
+}
   
-  .navigationPanel.open {
+.navigationPanel.open {
     transform: translateX(0);
-  }
+}
   
-  /* Media query for mobile devices */
-  @media (max-width: 480px) {
+/* Media query for mobile devices */
+@media (max-width: 480px) {
     .navigationPanel {
-      width: 100%; /* Full width on mobile */
-      max-width: 100%;
+        width: 100%; /* Full width on mobile */
+        max-width: 100%;
     }
-  }
-  
+}
