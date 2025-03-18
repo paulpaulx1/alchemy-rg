@@ -190,7 +190,7 @@ export default function FeaturedPortfolio({ artworks }) {
           return;
         }
         
-        // Schedule transition to next image - REDUCED from 5000 to 2500
+        // Schedule transition to next image
         addTimeout(async () => {
           // Get next image
           const nextIndex = (index + 1) % validArtworks.length;
@@ -208,7 +208,7 @@ export default function FeaturedPortfolio({ artworks }) {
           activeArtwork.style.opacity = '0';
           activeArtwork.style.filter = 'blur(10px)';
           
-          // INCREASED overlap - start fading in next image sooner (from 1000 to 1500)
+          // Start fading in the next image after a short delay (creates overlap)
           addTimeout(() => {
             // Fade in inactive container
             inactiveArtwork.style.opacity = '1';
@@ -224,8 +224,8 @@ export default function FeaturedPortfolio({ artworks }) {
               // Start next cycle
               startSlideshow();
             }, 2000); // Fade in time
-          }, 1500); // INCREASED overlap time - start next image sooner during fade-out
-        }, 2500); // REDUCED display time from 5000 to 2500
+          }, 300); // 300ms overlap - current image starts fading out, then next image starts fading in
+        }, 3200); // Display time
       }, 50); // Small delay for initial transition
     };
     
