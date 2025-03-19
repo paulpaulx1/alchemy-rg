@@ -130,18 +130,45 @@ export default function NavigationButton({portfolios}) {
 
 // Recursive component for portfolio navigation
 function RecursiveNavMenu({ portfolios, level = 0 }) {
-  return (
-    <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
-      {portfolios.map((portfolio) => (
-        <NavItem 
-          key={portfolio._id} 
-          portfolio={portfolio} 
-          level={level} 
-        />
-      ))}
-    </ul>
-  );
-}
+    // If this is the top level menu (level 0), add the Contact link at the end
+    if (level === 0) {
+      return (
+        <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
+          {portfolios.map((portfolio) => (
+            <NavItem 
+              key={portfolio._id} 
+              portfolio={portfolio} 
+              level={level} 
+            />
+          ))}
+          {/* Add Contact link at the end of the top level menu */}
+          <li className={styles.navItem}>
+            <div className={styles.navItemHeader}>
+              <Link 
+                href="/contact"
+                className={styles.navLink}
+              >
+                Contact
+              </Link>
+            </div>
+          </li>
+        </ul>
+      );
+    }
+    
+    // For sub-menus, just render the portfolio items without the Contact link
+    return (
+      <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
+        {portfolios.map((portfolio) => (
+          <NavItem 
+            key={portfolio._id} 
+            portfolio={portfolio} 
+            level={level} 
+          />
+        ))}
+      </ul>
+    );
+  }
 
 // Individual navigation item
 function NavItem({ portfolio, level }) {

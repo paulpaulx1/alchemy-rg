@@ -1,0 +1,20 @@
+/* contact.module.css */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+  
+  .title {
+    font-family: 'EB Garamond', serif;
+    font-size: 2rem;
+    font-weight: normal;
+    color: #222;
+    margin-bottom: 3rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  
+  .formContainer {
+    margin: 0 auto;
+  }
