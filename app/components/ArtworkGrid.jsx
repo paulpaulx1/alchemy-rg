@@ -52,7 +52,7 @@ export default function ArtworkGrid({ artworks }) {
               <div className={styles.innerContainer}>
                 {artwork.mediaType === "image" ? (
                   <img
-                    src={artwork.lowResImageUrl}
+                    src={artwork.imageUrl}
                     alt={artwork.title || "Untitled artwork"}
                     className={styles.thumbnail}
                   />
