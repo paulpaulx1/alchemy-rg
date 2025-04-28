@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import GlobalNavigation from "./components/GlobalNavigation";
 import { createClient } from "@sanity/client";
+import FeaturedPortfolio from "./components/FeaturedPortfolio";
 
 export const metadata = {
   title: "Raj Gupta | Artist",
@@ -18,14 +19,44 @@ const client = createClient({
 });
 
 export async function getSiteSettings() {
-  return client.fetch(`
-    *[_type == "siteSettings"][0] {
+  // First try to get the active settings
+  const activeSettings = await client.fetch(`
+    *[_type == "siteSettings" && isActive == true][0] {
       backgroundColor,
       textColor,
       font
     }
   `);
+  
+  // If there's no active setting, fall back to the first one
+  if (!activeSettings) {
+    return client.fetch(`
+      *[_type == "siteSettings"][0] {
+        backgroundColor,
+        textColor,
+        font
+      }
+    `);
+  }
+  
+  return activeSettings;
 }
+
+export async function getFeaturedPortfolios() {
+  return client.fetch(`
+    *[_type == "portfolio" && featured == true] | order(order asc) {
+      _id,
+      title,
+      slug,
+      description,
+      year,
+      "coverImage": coverImage.asset->url,
+      "coverArtworkImage": coverArtwork->coverImage.asset->url
+    }
+  `);
+}
+const featuredPortfolios = await getFeaturedPortfolios();
+console.log('featured', featuredPortfolios);
 
 export default async function RootLayout({ children }) {
   // Fetch site settings
