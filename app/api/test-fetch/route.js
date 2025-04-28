@@ -33,11 +33,20 @@ export async function GET() {
       }
     `);
 
+    // Fetch site settings
+    const siteSettings = await client.fetch(`
+      *[_type == "siteSettings"][0] {
+        backgroundColor,
+        font
+      }
+    `);
+
     // Return the data
     return NextResponse.json({ 
       success: true, 
       portfolios, 
       artist,
+      siteSettings,
       message: 'Data fetched successfully'
     });
   } catch (error) {
