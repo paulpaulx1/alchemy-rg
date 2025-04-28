@@ -50,6 +50,7 @@ export default async function GlobalNavigation() {
       _id,
       title,
       slug,
+      order,
       "parentId": parentPortfolio._ref
     }
   `);

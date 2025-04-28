@@ -19,6 +19,7 @@ export async function GET() {
         title,
         slug,
         description,
+        order,
         "coverImage": coverImage.asset->url
       }
     `);

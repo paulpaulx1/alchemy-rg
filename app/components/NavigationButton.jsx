@@ -131,10 +131,28 @@ export default function NavigationButton({portfolios}) {
 // Recursive component for portfolio navigation
 function RecursiveNavMenu({ portfolios, level = 0 }) {
     // If this is the top level menu (level 0), add the Contact link at the end
+    const sortedPortfolios = [...portfolios].sort((a, b) => {
+      // If both have order values, compare them
+      if (a.order !== null && b.order !== null) {
+        return a.order - b.order;
+      }
+      // If a has order but b doesn't, a comes first
+      if (a.order !== null && b.order === null) {
+        return -1;
+      }
+      // If b has order but a doesn't, b comes first
+      if (a.order === null && b.order !== null) {
+        return 1;
+      }
+      // If both are null, keep original order
+      return 0;
+    });
+    console.log(sortedPortfolios);
+
     if (level === 0) {
       return (
         <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
-          {portfolios.map((portfolio) => (
+          {sortedPortfolios.map((portfolio) => (
             <NavItem 
               key={portfolio._id} 
               portfolio={portfolio} 
@@ -159,7 +177,7 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
     // For sub-menus, just render the portfolio items without the Contact link
     return (
       <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
-        {portfolios.map((portfolio) => (
+        {sortedPortfolios.map((portfolio) => (
           <NavItem 
             key={portfolio._id} 
             portfolio={portfolio} 

@@ -60,9 +60,12 @@ export default function Navigation({ portfolios }) {
 
 // Recursive component for portfolio navigation
 function RecursiveNavMenu({ portfolios, level = 0 }) {
+
+  const sortedPortfolios = [...portfolios].sort((a, b) => a.order - b.order);
+  console.log(sortedPortfolios);
   return (
     <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
-      {portfolios.map((portfolio) => (
+      {sortedPortfolios.map((portfolio) => (
         <NavItem 
           key={portfolio._id} 
           portfolio={portfolio} 
