@@ -87,7 +87,7 @@ export default async function Portfolio({ params }) {
   const showCollectionsHeading = hasSubPortfolios;
 
   console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
-  )
+  
 
   return (
     <div className={styles.container}>
