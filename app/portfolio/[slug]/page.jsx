@@ -86,6 +86,9 @@ export default async function Portfolio({ params }) {
   const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
   const showCollectionsHeading = hasSubPortfolios;
 
+  console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
+  )
+
   return (
     <div className={styles.container}>
       {/* Simplified breadcrumb - only show parent links */}
