@@ -1,24 +1,23 @@
-/* Force the layout to work correctly */
-.container {
+/* Complete page wrapper */
+.pageWrapper {
     width: 100%;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    padding: 0;
-    margin: 0;
     overflow: hidden;
   }
   
+  /* Breadcrumbs - positioned below fixed header */
   .breadcrumbs {
-    position: absolute;
-    top: 20px;
+    position: fixed;
+    top: 80px; /* Below the fixed header */
     left: 20px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.9rem;
     font-family: 'EB Garamond', serif;
-    z-index: 100;
+    z-index: 50; /* Below header but above content */
   }
   
   .breadcrumbLink {
@@ -41,24 +40,110 @@
     font-weight: 500;
   }
   
-  /* Main artwork container - takes full viewport */
-  .artworkContainer {
-    width: 100%;
-    height: 100vh;
+  /* Main content area - account for header height */
+  .mainContent {
+    flex: 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 100px 40px 120px 40px; /* Top padding for breadcrumbs, bottom for nav */
-    box-sizing: border-box;
+    padding: 120px 20px 20px 20px; /* Top padding for header + breadcrumbs */
+    min-height: 0; /* Allow shrinking */
   }
   
-  /* Artwork info - positioned above image, centered */
+  /* Artwork container - centers the image */
+  .artworkContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  /* ARTWORK IMAGE with proper z-index hierarchy */
+  .artworkImage {
+    max-width: 90vw;
+    max-height: 100%; /* Use full height of container */
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    position: relative;
+    z-index: 99999; /* High z-index by default */
+    transition: z-index 0.1s ease;
+  }
+  
+  /* Lower z-index when menu is open */
+  .artworkImage.menuOpen {
+    z-index: 1 !important;
+  }
+  
+  /* Portrait images */
+  .artworkImage.portraitImage {
+    max-width: 85vw;
+    max-height: 100%;
+    position: relative;
+    z-index: 99999;
+    transition: z-index 0.1s ease;
+  }
+  
+  .artworkImage.portraitImage.menuOpen {
+    z-index: 1 !important;
+  }
+  
+  /* Landscape images */
+  .artworkImage.landscapeImage {
+    max-width: 90vw;
+    max-height: 100%;
+    position: relative;
+    z-index: 99999;
+    transition: z-index 0.1s ease;
+  }
+  
+  .artworkImage.landscapeImage.menuOpen {
+    z-index: 1 !important;
+  }
+  
+  /* Video styles */
+  .videoContainer {
+    width: 90vw;
+    max-width: 1200px;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .artworkVideo {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+    display: block;
+  }
+  
+  .videoError {
+    padding: 20px;
+    background-color: #f8f8f8;
+    color: #666;
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+  }
+  
+  /* Bottom section - contains info and navigation */
+  .bottomSection {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Artwork info */
   .artworkInfo {
     text-align: center;
     color: #333;
     font-family: 'EB Garamond', serif;
-    flex-shrink: 0;
+    margin-bottom: 20px;
   }
   
   .artworkTitle {
@@ -104,65 +189,13 @@
     margin: 0;
   }
   
-  /* Image container - takes remaining space, centered */
-  .artworkImageContainer {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 100%;
-    max-height: 60vh; /* Limit the container height */
-  }
-  
-  .artworkImage {
-    max-width: 70vw;
-    max-height: 55vh;
-    object-fit: contain;
-    display: block;
-  }
-  
-  .videoContainer {
-    width: 70vw;
-    max-width: 800px;
-    height: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .artworkVideo {
-    width: 100%;
-    height: auto;
-    max-height: 50vh;
-    object-fit: contain;
-    display: block;
-  }
-  
-  .videoError {
-    padding: 20px;
-    background-color: #f8f8f8;
-    color: #666;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-  }
-  
-  /* Fixed navigation at bottom */
+  /* Navigation buttons */
   .navigation {
-    position: fixed;
-    bottom: 40px;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 40px;
-    z-index: 1001;
-    pointer-events: none; /* Allow clicks to pass through the container */
-  }
-  
-  .navigation > * {
-    pointer-events: auto; /* Re-enable clicks on the actual links */
+    max-width: 600px;
+    margin: 0 auto;
   }
   
   .navLink {
@@ -173,9 +206,9 @@
     color: #555;
     cursor: pointer;
     letter-spacing: 0.5px;
-    padding: 6px 8px;
-    transition: color 0.2s ease;
-    border-radius: 4px;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
     text-decoration: none;
     text-align: center;
     display: block;
@@ -184,71 +217,67 @@
   .navLink:hover {
     color: #000;
     border-color: #000;
-  }
-  
-  .backToPortfolio {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    font-family: 'EB Garamond', serif;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    font-size: 17px;
-    white-space: nowrap;
-  }
-  
-  .backToPortfolio:hover {
-    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05);
   }
   
   /* Mobile responsive */
   @media (max-width: 767px) {
     .breadcrumbs {
       font-size: 0.8rem;
-      top: 15px;
+      top: 70px; /* Adjusted for mobile header */
       left: 15px;
     }
     
-    .artworkContainer {
-      padding: 80px 20px 100px 20px;
+    .mainContent {
+      padding: 100px 10px 10px 10px; /* Reduced top padding for mobile */
+    }
+    
+    .bottomSection {
+      padding: 15px;
     }
     
     .navigation {
-      bottom: 25px;
-      padding: 0 20px;
-    }
-    
-    .navLink {
-      font-size: 14px;
-      padding: 4px 6px;
-    }
-    
-    .backToPortfolio {
-      font-size: 14px;
-    }
-    
-    .artworkImage {
-      max-width: 85vw;
-      max-height: 45vh;
-    }
-    
-    .artworkInfo {
-      margin-bottom: 20px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
     }
     
     .artworkTitle {
       font-size: 18px;
     }
     
+    .artworkDetails {
+      font-size: 12px;
+    }
+    
+    .artworkDescription {
+      font-size: 13px;
+    }
+    
+    .navLink {
+      font-size: 14px;
+      padding: 6px 12px;
+      min-width: 80px;
+    }
+    
+    /* Mobile artwork sizes */
+    .artworkImage {
+      max-width: 95vw;
+    }
+    
+    .artworkImage.portraitImage {
+      max-width: 90vw;
+    }
+    
+    .artworkImage.landscapeImage {
+      max-width: 95vw;
+    }
+    
     .videoContainer {
-      width: 85vw;
-      max-width: 600px;
+      width: 95vw;
     }
     
     .artworkVideo {
-      max-height: 40vh;
+      max-height: 70vh;
     }
   }

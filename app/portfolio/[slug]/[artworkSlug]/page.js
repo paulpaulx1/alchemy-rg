@@ -1,5 +1,6 @@
 import { createClient } from "@sanity/client";
 import Link from "next/link";
+import ResponsiveArtworkImage from "@/app/components/ResponsiveArtworkImage";
 import styles from "./ArtworkPage.module.css";
 
 // Initialize the Sanity client
@@ -84,12 +85,18 @@ export default async function ArtworkPage({ params }) {
   );
 
   // Find current artwork index and navigation links
-  const currentIndex = allArtworks.findIndex(a => a._id === artwork._id);
-  const prevArtwork = currentIndex > 0 ? allArtworks[currentIndex - 1] : allArtworks[allArtworks.length - 1];
-  const nextArtwork = currentIndex < allArtworks.length - 1 ? allArtworks[currentIndex + 1] : allArtworks[0];
+  const currentIndex = allArtworks.findIndex((a) => a._id === artwork._id);
+  const prevArtwork =
+    currentIndex > 0
+      ? allArtworks[currentIndex - 1]
+      : allArtworks[allArtworks.length - 1];
+  const nextArtwork =
+    currentIndex < allArtworks.length - 1
+      ? allArtworks[currentIndex + 1]
+      : allArtworks[0];
 
   return (
-    <div className={styles.container}>
+    <div className={styles.pageWrapper}>
       {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
         <Link href="/" className={styles.breadcrumbLink}>
@@ -119,64 +126,15 @@ export default async function ArtworkPage({ params }) {
         <span className={styles.breadcrumbCurrent}>{artwork.title}</span>
       </div>
 
-      {/* Navigation */}
-      <div className={styles.navigation}>
-        <Link
-          href={`/portfolio/${portfolioSlug}/${prevArtwork.slug}`}
-          className={styles.navLink}
-        >
-          ← Previous
-        </Link>
-        
-        <Link
-          href={`/portfolio/${portfolioSlug}`}
-          className={styles.backToPortfolio}
-        >
-          Back to {artwork.portfolio.title}
-        </Link>
-        
-        <Link
-          href={`/portfolio/${portfolioSlug}/${nextArtwork.slug}`}
-          className={styles.navLink}
-        >
-          Next →
-        </Link>
-      </div>
-
-      {/* Artwork Display */}
-      <div className={styles.artworkContainer}>
-        {/* Artwork Info - Title and Description ABOVE the image */}
-        <div className={styles.artworkInfo}>
-          <h1 className={styles.artworkTitle}>
-            {artwork.title || "Untitled"}
-          </h1>
-          
-          <div className={styles.artworkDetails}>
-            {artwork.year && (
-              <p className={styles.artworkYear}>{artwork.year}</p>
-            )}
-            {artwork.medium && (
-              <p className={styles.artworkMedium}>{artwork.medium}</p>
-            )}
-            {artwork.dimensions && (
-              <p className={styles.artworkDimensions}>{artwork.dimensions}</p>
-            )}
-          </div>
-
-          {artwork.description && (
-            <div className={styles.artworkDescription}>
-              <p>{artwork.description}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Artwork Image/Video - BELOW the info */}
-        <div className={styles.artworkImageContainer}>
+      {/* Main Content Area */}
+      <div className={styles.mainContent}>
+        {/* Artwork Display */}
+        <div className={styles.artworkContainer}>
           {artwork.mediaType === "image" ? (
-            <img
+            <ResponsiveArtworkImage
               src={artwork.imageUrl}
-              alt={artwork.title || "Untitled artwork"}
-              className={styles.artworkImage}
+              alt={artwork.title}
+              title={artwork.title}
             />
           ) : (
             <div className={styles.videoContainer}>
@@ -200,6 +158,51 @@ export default async function ArtworkPage({ params }) {
               )}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Bottom Navigation and Info */}
+      <div className={styles.bottomSection}>
+        {/* Navigation with centered info for desktop */}
+        <div className={styles.navigation}>
+          <Link
+            href={`/portfolio/${portfolioSlug}/${prevArtwork.slug}`}
+            className={styles.navLink}
+          >
+            Previous
+          </Link>
+
+          {/* Desktop: Artwork Info - centered between buttons */}
+          <div className={styles.desktopArtworkInfo}>
+            <h1 className={styles.artworkTitle}>
+              {artwork.title || "Untitled"}
+            </h1>
+
+            <div className={styles.artworkDetails}>
+              {artwork.year && (
+                <p className={styles.artworkYear}>{artwork.year}</p>
+              )}
+              {artwork.medium && (
+                <p className={styles.artworkMedium}>{artwork.medium}</p>
+              )}
+              {artwork.dimensions && (
+                <p className={styles.artworkDimensions}>{artwork.dimensions}</p>
+              )}
+            </div>
+
+            {artwork.description && (
+              <div className={styles.artworkDescription}>
+                <p>{artwork.description}</p>
+              </div>
+            )}
+          </div>
+
+          <Link
+            href={`/portfolio/${portfolioSlug}/${nextArtwork.slug}`}
+            className={styles.navLink}
+          >
+            Next
+          </Link>
         </div>
       </div>
     </div>
