@@ -3,20 +3,23 @@ import Link from "next/link";
 import "./globals.css";
 import GlobalNavigation from "./components/GlobalNavigation";
 import { createClient } from "@sanity/client";
-import FeaturedPortfolio from "./components/FeaturedPortfolio";
 
 export const metadata = {
   title: "Raj Gupta | Artist",
   description: "The artistic works of Raj Gupta",
 };
 
-// Initialize the Sanity client
+// Initialize the Sanity client with caching disabled
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "your-project-id",
   apiVersion: "2023-03-01",
   dataset: "production",
-  useCdn: true,
+  useCdn: false, // Disable CDN caching - always get fresh data
 });
+
+// Disable Next.js caching for this function
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function getSiteSettings() {
   // First try to get the active settings
@@ -41,22 +44,6 @@ export async function getSiteSettings() {
   
   return activeSettings;
 }
-
-export async function getFeaturedPortfolios() {
-  return client.fetch(`
-    *[_type == "portfolio" && featured == true] | order(order asc) {
-      _id,
-      title,
-      slug,
-      description,
-      year,
-      "coverImage": coverImage.asset->url,
-      "coverArtworkImage": coverArtwork->coverImage.asset->url
-    }
-  `);
-}
-const featuredPortfolios = await getFeaturedPortfolios();
-console.log('featured', featuredPortfolios);
 
 export default async function RootLayout({ children }) {
   // Fetch site settings
@@ -109,6 +96,9 @@ export default async function RootLayout({ children }) {
     return styles;
   };
 
+  // Add a simple cache buster to the style tag
+  const cacheBuster = Date.now();
+
   return (
     <html lang="en">
       <head>
@@ -123,12 +113,19 @@ export default async function RootLayout({ children }) {
           />
         )}
 
-        {/* Add the dynamic styles with !important */}
+        {/* Add the dynamic styles with a cache buster */}
         {settings && (
           <style
-            dangerouslySetInnerHTML={{ __html: createStyleTagContent() }}
+            dangerouslySetInnerHTML={{ 
+              __html: createStyleTagContent() + `\n/* Cache buster: ${cacheBuster} */` 
+            }}
           />
         )}
+        
+        {/* Meta tags to prevent browser caching */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
       </head>
       <body>
         <div className="site-wrapper">

@@ -92,7 +92,7 @@ export default async function Portfolio({ params }) {
   return (
     <div className={styles.container}>
       {/* Simplified breadcrumb - only show parent links */}
-      <div className={styles.breadcrumbs}>
+      <div className={styles.breadcrumbs}> 
         <Link href="/" className={styles.breadcrumbLink}>
           Home
         </Link>

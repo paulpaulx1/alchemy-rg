@@ -1,4 +1,3 @@
-// app/page.js
 import { createClient } from '@sanity/client';
 import FeaturedPortfolio from './components/FeaturedPortfolio';
 
@@ -7,8 +6,12 @@ const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
   apiVersion: '2023-03-01',
-  useCdn: false, // Setting to false for fresh data on server
+  useCdn: false, // Disable caching - always fetch fresh data
 });
+
+// Disable Next.js caching for this page
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // This becomes a server component that fetches data server-side
 export default async function Home() {
@@ -59,6 +62,3 @@ export default async function Home() {
     );
   }
 }
-
-// Enable ISR - updates the cache every 60 seconds
-export const revalidate = 60;
