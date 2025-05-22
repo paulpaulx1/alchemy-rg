@@ -50,6 +50,11 @@ export default function NavigationButton({portfolios}) {
   const navRef = useRef(null);
   const pathname = usePathname();
 
+  // Function to close the navigation
+  const closeNav = () => {
+    setIsOpen(false);
+  };
+
   // Fetch portfolios
   useEffect(() => {
     async function fetchData() {
@@ -121,7 +126,7 @@ export default function NavigationButton({portfolios}) {
           >
             ×
           </button>
-          <RecursiveNavMenu portfolios={portfolios} />
+          <RecursiveNavMenu portfolios={portfolios} closeNav={closeNav} />
         </div>
       </div>
     </>
@@ -129,7 +134,7 @@ export default function NavigationButton({portfolios}) {
 }
 
 // Recursive component for portfolio navigation
-function RecursiveNavMenu({ portfolios, level = 0 }) {
+function RecursiveNavMenu({ portfolios, level = 0, closeNav }) {
     // If this is the top level menu (level 0), add the Contact link at the end
     const sortedPortfolios = [...portfolios].sort((a, b) => {
       // If both have order values, compare them
@@ -156,7 +161,8 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
             <NavItem 
               key={portfolio._id} 
               portfolio={portfolio} 
-              level={level} 
+              level={level}
+              closeNav={closeNav}
             />
           ))}
           {/* Add Contact link at the end of the top level menu */}
@@ -165,6 +171,7 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
               <Link 
                 href="/contact"
                 className={styles.navLink}
+                onClick={closeNav}
               >
                 Contact
               </Link>
@@ -181,7 +188,8 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
           <NavItem 
             key={portfolio._id} 
             portfolio={portfolio} 
-            level={level} 
+            level={level}
+            closeNav={closeNav}
           />
         ))}
       </ul>
@@ -189,14 +197,26 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
   }
 
 // Individual navigation item
-function NavItem({ portfolio, level }) {
+function NavItem({ portfolio, level, closeNav }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
+  const pathname = usePathname();
   
   // Determine the link path based on whether it's a custom route
   const linkPath = portfolio.isCustomRoute 
     ? `/${portfolio.slug.current}` 
     : `/portfolio/${portfolio.slug.current}`;
+
+  // Handle click on portfolio link
+  const handlePortfolioClick = (e) => {
+    // Only close the nav if we're already on this page
+    if (pathname === linkPath) {
+      e.preventDefault();
+      closeNav();
+    }
+    // If navigating to a different page, let the link work normally
+    // and let the useEffect that listens to pathname changes close the nav
+  };
   
   return (
     <li className={styles.navItem}>
@@ -204,6 +224,7 @@ function NavItem({ portfolio, level }) {
         <Link 
           href={linkPath}
           className={styles.navLink}
+          onClick={handlePortfolioClick}
         >
           {portfolio.title}
         </Link>
@@ -223,7 +244,8 @@ function NavItem({ portfolio, level }) {
       {hasSubPortfolios && isExpanded && (
         <RecursiveNavMenu 
           portfolios={portfolio.subPortfolios} 
-          level={level + 1} 
+          level={level + 1}
+          closeNav={closeNav}
         />
       )}
     </li>
