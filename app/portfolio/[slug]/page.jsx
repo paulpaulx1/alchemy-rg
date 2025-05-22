@@ -1,4 +1,3 @@
-// app/portfolio/[slug]/page.js
 import { createClient } from "@sanity/client";
 import Link from "next/link";
 import ArtworkGrid from "@/app/components/ArtworkGrid";
@@ -55,11 +54,12 @@ export default async function Portfolio({ params }) {
       medium,
       dimensions
     },
-    "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] {
+    "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == ^._id] | order(order asc) {
       _id,
       title,
       "slug": slug.current,
       description,
+      order,
       "coverImageUrl": coalesce(
         coverArtwork->image.asset->url,
         coverImage.asset->url,
@@ -81,10 +81,6 @@ export default async function Portfolio({ params }) {
       </div>
     );
   }
-
-  // Determine if we need to show collections heading
-  const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
-  const showCollectionsHeading = hasSubPortfolios;
 
   console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
   
@@ -124,12 +120,8 @@ export default async function Portfolio({ params }) {
       )}
 
       {/* Show sub-portfolios if they exist */}
-      {hasSubPortfolios && (
+      {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
         <div className={styles.subPortfolioList}>
-          {/* Only show Collections heading if there are sub-portfolios */}
-          {showCollectionsHeading && (
-            <h2 className={styles.subHeading}>Collections</h2>
-          )}
           <div className={styles.portfolioGrid}>
             {portfolio.subPortfolios.map((subPortfolio) => (
               <Link
