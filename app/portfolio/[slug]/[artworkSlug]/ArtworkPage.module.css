@@ -282,3 +282,102 @@
       max-height: 70vh;
     }
   }
+
+  /* Navigation buttons - UPDATED */
+.navigation {
+    position: relative;
+    width: 100%;
+    max-width: none; /* Remove max-width constraint */
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center the middle content */
+    padding: 0 2rem; /* Add some base padding */
+  }
+  
+  /* Position nav buttons at 10% from edges */
+  .navLink {
+    position: absolute;
+    background: transparent;
+    border: 1px solid #555;
+    font-size: 17px;
+    font-family: 'EB Garamond', serif;
+    color: #555;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    margin: 0; /* Remove margin since we're using absolute positioning */
+  }
+  
+  /* Previous button - 10% from left edge */
+  .navLink:first-child {
+    left: 10%;
+  }
+  
+  /* Next button - 10% from right edge */
+  .navLink:last-child {
+    right: 10%;
+  }
+  
+  .navLink:hover {
+    color: #000;
+    border-color: #000;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Desktop artwork info - now truly centered */
+  .desktopArtworkInfo {
+    text-align: center;
+    color: #333;
+    font-family: 'EB Garamond', serif;
+    position: relative;
+    z-index: 1;
+    max-width: 60%; /* Constrain width so it doesn't overlap buttons */
+  }
+  
+  /* Mobile responsive - UPDATED */
+  @media (max-width: 767px) {
+    .navigation {
+      padding: 0 1rem;
+      min-height: 60px; /* Ensure enough height for buttons */
+    }
+    
+    /* On mobile, move buttons closer to center but still spread out */
+    .navLink:first-child {
+      left: 5%; /* Closer on mobile */
+    }
+    
+    .navLink:last-child {
+      right: 5%; /* Closer on mobile */
+    }
+    
+    .navLink {
+      font-size: 14px;
+      padding: 6px 12px;
+      min-width: 80px;
+    }
+    
+    .desktopArtworkInfo {
+      max-width: 70%; /* Allow more width on mobile */
+    }
+  }
+  
+  /* Extra small screens */
+  @media (max-width: 480px) {
+    .navLink:first-child {
+      left: 3%;
+    }
+    
+    .navLink:last-child {
+      right: 3%;
+    }
+    
+    .desktopArtworkInfo {
+      max-width: 75%;
+    }
+  }
