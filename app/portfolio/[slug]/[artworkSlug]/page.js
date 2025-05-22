@@ -1,13 +1,13 @@
-import { createClient } from "@sanity/client";
-import Link from "next/link";
-import ResponsiveArtworkImage from "@/app/components/ResponsiveArtworkImage";
-import styles from "./ArtworkPage.module.css";
+import { createClient } from '@sanity/client';
+import Link from 'next/link';
+import ResponsiveArtworkImage from '@/app/components/ResponsiveArtworkImage';
+import styles from './ArtworkPage.module.css';
 
 // Initialize the Sanity client
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
-  apiVersion: "2023-03-01",
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2023-03-01',
   useCdn: false,
 });
 
@@ -43,6 +43,8 @@ export default async function ArtworkPage({ params }) {
       "videoUrl": video.asset->url,
       "videoThumbnailUrl": videoThumbnail.asset->url,
       externalVideoUrl,
+      "pdfUrl": pdfFile.asset->url,
+      "pdfThumbnailUrl": pdfThumbnail.asset->url,
       description,
       year,
       medium,
@@ -66,7 +68,7 @@ export default async function ArtworkPage({ params }) {
     return (
       <div className={styles.container}>
         <h1>Artwork not found</h1>
-        <Link href="/">Return to home</Link>
+        <Link href='/'>Return to home</Link>
       </div>
     );
   }
@@ -99,7 +101,7 @@ export default async function ArtworkPage({ params }) {
     <div className={styles.pageWrapper}>
       {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
-        <Link href="/" className={styles.breadcrumbLink}>
+        <Link href='/' className={styles.breadcrumbLink}>
           Home
         </Link>
         <span className={styles.breadcrumbSeparator}>/</span>
@@ -130,7 +132,16 @@ export default async function ArtworkPage({ params }) {
       <div className={styles.mainContent}>
         {/* Artwork Display */}
         <div className={styles.artworkContainer}>
-          {artwork.mediaType === "image" ? (
+          {artwork.mediaType === 'pdf' ? (
+            <div className={styles.pdfContainer}>
+              <iframe
+                src={artwork.pdfUrl}
+                type='PDF Viewer'
+                className={styles.pdfViewer}
+                aria-label={`PDF viewer for ${artwork.title || 'artwork'}`}
+              ></iframe>
+            </div>
+          ) : artwork.mediaType === 'image' ? (
             <ResponsiveArtworkImage
               src={artwork.imageUrl}
               alt={artwork.title}
@@ -148,8 +159,7 @@ export default async function ArtworkPage({ params }) {
                 <iframe
                   src={getEmbedUrl(artwork.externalVideoUrl)}
                   title={artwork.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
                   allowFullScreen
                   className={styles.artworkVideo}
                 ></iframe>
@@ -175,7 +185,7 @@ export default async function ArtworkPage({ params }) {
           {/* Desktop: Artwork Info - centered between buttons */}
           <div className={styles.desktopArtworkInfo}>
             <h1 className={styles.artworkTitle}>
-              {artwork.title || "Untitled"}
+              {artwork.title || 'Untitled'}
             </h1>
 
             <div className={styles.artworkDetails}>
