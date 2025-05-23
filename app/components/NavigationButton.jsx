@@ -47,12 +47,14 @@ function buildPortfolioTree(portfolios) {
 export default function NavigationButton({portfolios}) {
   const [isOpen, setIsOpen] = useState(false);
   const [setPortfolios] = useState([]);
+  const [resetKey, setResetKey] = useState(0); // Add reset key for forcing re-render
   const navRef = useRef(null);
   const pathname = usePathname();
 
-  // Function to close the navigation
+  // Function to close the navigation and reset expanded states
   const closeNav = () => {
     setIsOpen(false);
+    setResetKey(prev => prev + 1); // Force re-render to reset all expanded states
   };
 
   // Fetch portfolios
@@ -84,7 +86,7 @@ export default function NavigationButton({portfolios}) {
   useEffect(() => {
     function handleClickOutside(event) {
       if (navRef.current && !navRef.current.contains(event.target) && !event.target.closest('.menu-button')) {
-        setIsOpen(false);
+        closeNav(); // Use closeNav instead of setIsOpen(false)
       }
     }
     
@@ -94,7 +96,7 @@ export default function NavigationButton({portfolios}) {
 
   // Close menu when route changes
   useEffect(() => {
-    setIsOpen(false);
+    closeNav(); // Use closeNav instead of setIsOpen(false)
   }, [pathname]);
 
   return (
@@ -111,7 +113,7 @@ export default function NavigationButton({portfolios}) {
       {/* Overlay */}
       <div 
         className={`${styles.navigationOverlay} ${isOpen ? styles.open : ''}`}
-        onClick={() => setIsOpen(false)} // Close menu when clicking overlay
+        onClick={closeNav} // Use closeNav instead of () => setIsOpen(false)
       />
       
       {/* Navigation Panel */}
@@ -122,11 +124,15 @@ export default function NavigationButton({portfolios}) {
         <div className={styles.navigationInner}>
           <button 
             className={styles.closeButton}
-            onClick={() => setIsOpen(false)}
+            onClick={closeNav} // Use closeNav instead of () => setIsOpen(false)
           >
             ×
           </button>
-          <RecursiveNavMenu portfolios={portfolios} closeNav={closeNav} />
+          <RecursiveNavMenu 
+            key={resetKey} // Add key prop to force re-render
+            portfolios={portfolios} 
+            closeNav={closeNav} 
+          />
         </div>
       </div>
     </>

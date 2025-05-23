@@ -134,16 +134,17 @@
   /* Bottom section - contains info and navigation */
   .bottomSection {
     background-color: rgba(255, 255, 255, 0.95);
-    padding: 20px;
+    padding: 15px 10px; /* Reduced padding */
     backdrop-filter: blur(10px);
   }
   
-  /* Artwork info */
-  .artworkInfo {
+  /* Desktop artwork info - centered with max width to prevent overlap */
+  .desktopArtworkInfo {
     text-align: center;
     color: #333;
     font-family: 'EB Garamond', serif;
-    margin-bottom: 20px;
+    max-width: 50%; /* Tighter constraint to prevent overlap */
+    margin: 0 auto 20px auto;
   }
   
   .artworkTitle {
@@ -189,16 +190,21 @@
     margin: 0;
   }
   
-  /* Navigation buttons */
+  /* Navigation buttons - simplified positioning */
   .navigation {
+    position: relative;
+    width: 100%;
+    margin: 0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    max-width: 600px;
-    margin: 0 auto;
+    justify-content: center;
+    padding: 0; /* Remove padding here since bottomSection has padding */
+    min-height: 50px;
   }
   
+  /* Position nav buttons at edges */
   .navLink {
+    position: absolute;
     background: transparent;
     border: 1px solid #555;
     font-size: 17px;
@@ -212,7 +218,19 @@
     text-decoration: none;
     text-align: center;
     display: block;
-    margin: 0 20px;
+    margin: 0;
+  }
+  
+  /* Previous button - closer to left edge */
+  .navLink:first-child {
+    left: 5%;
+    bottom: 10%;
+  }
+  
+  /* Next button - closer to right edge */
+  .navLink:last-child {
+    right: 5%;
+    bottom: 10%;
   }
   
   .navLink:hover {
@@ -234,13 +252,32 @@
     }
     
     .bottomSection {
-      padding: 15px;
+      padding: 10px 5px; /* Even less padding on mobile */
     }
     
     .navigation {
-      justify-content: space-between;
-      align-items: center;
-      gap: 20px;
+      padding: 0; /* No padding on mobile either */
+      min-height: 60px;
+    }
+    
+    /* Move buttons to 3% from edges on mobile */
+    .navLink:first-child {
+      left: 3%;
+    }
+    
+    .navLink:last-child {
+      right: 3%;
+    }
+    
+    .navLink {
+      font-size: 14px;
+      padding: 6px 12px;
+      min-width: 80px;
+    }
+    
+    /* Allow more width for text on mobile but still constrained */
+    .desktopArtworkInfo {
+      max-width: 50%;
     }
     
     .artworkTitle {
@@ -253,12 +290,6 @@
     
     .artworkDescription {
       font-size: 13px;
-    }
-    
-    .navLink {
-      font-size: 14px;
-      padding: 6px 12px;
-      min-width: 80px;
     }
     
     /* Mobile artwork sizes */
