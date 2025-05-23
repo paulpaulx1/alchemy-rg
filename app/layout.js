@@ -130,7 +130,7 @@ export default async function RootLayout({ children }) {
       <body>
         <div className="site-wrapper">
           <header className="site-header">
-            <Link href="/" className="site-title">
+            <Link href="/about" className="site-title">
               Raj Gupta
             </Link>
             <GlobalNavigation />
