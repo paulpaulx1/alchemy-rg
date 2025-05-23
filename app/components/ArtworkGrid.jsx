@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import styles from "./ArtworkGrid.module.css";
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import styles from './ArtworkGrid.module.css';
 
 export default function ArtworkGrid({ artworks }) {
   const params = useParams();
@@ -16,8 +16,68 @@ export default function ArtworkGrid({ artworks }) {
 
   const isSingleArtwork = artworks.length === 1;
 
+  function renderArtworkThumbnail(artwork) {
+    switch (artwork.mediaType) {
+      case 'image':
+        return (
+          <img
+            src={artwork.imageUrl}
+            alt={artwork.title || 'Untitled artwork'}
+            className={styles.thumbnail}
+          />
+        );
+      case 'video':
+        return (
+          <div className={styles.videoThumbnail}>
+            {artwork.videoThumbnailUrl ? (
+              <img
+                src={artwork.videoThumbnailUrl}
+                alt={artwork.title || 'Untitled video'}
+                className={styles.thumbnail}
+              />
+            ) : (
+              <div className={styles.videoPlaceholder}>
+                <span>Video</span>
+              </div>
+            )}
+            <div className={styles.playButton}>▶</div>
+          </div>
+        );
+      case 'pdf':
+        return (
+          <>
+            {artwork.pdfThumbnailUrl ? (
+              <div className={styles.pdfThumbnail}>
+                <img
+                  src={artwork.pdfThumbnailUrl}
+                  alt={artwork.title || 'Untitled PDF'}
+                  className={styles.thumbnail}
+                />
+              </div>
+            ) : (
+              <div className={styles.pdfDefaultThumbnail}>
+                <img
+                  src={
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317'
+                  }
+                  alt={artwork.title || 'Untitled PDF'}
+                  className={styles.defaultThumbnail}
+                />
+              </div>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  }
+
   return (
-    <div className={`${styles.grid} ${isSingleArtwork ? styles.singleItemGrid : ''}`}>
+    <div
+      className={`${styles.grid} ${
+        isSingleArtwork ? styles.singleItemGrid : ''
+      }`}
+    >
       {artworks.map((artwork, index) => (
         <Link
           href={`/portfolio/${portfolioSlug}/${artwork.slug}`}
@@ -26,34 +86,12 @@ export default function ArtworkGrid({ artworks }) {
         >
           <div className={styles.imageContainer}>
             <div className={styles.innerContainer}>
-              {artwork.mediaType === "image" ? (
-                <img
-                  src={artwork.imageUrl}
-                  alt={artwork.title || "Untitled artwork"}
-                  className={styles.thumbnail}
-                />
-              ) : (
-                // Video thumbnail
-                <div className={styles.videoThumbnail}>
-                  {artwork.videoThumbnailUrl ? (
-                    <img
-                      src={artwork.videoThumbnailUrl}
-                      alt={artwork.title || "Untitled video"}
-                      className={styles.thumbnail}
-                    />
-                  ) : (
-                    <div className={styles.videoPlaceholder}>
-                      <span>Video</span>
-                    </div>
-                  )}
-                  <div className={styles.playButton}>▶</div>
-                </div>
-              )}
+              {renderArtworkThumbnail(artwork)}
             </div>
           </div>
           <div className={styles.artworkInfo}>
             <h3 className={styles.artworkTitle}>
-              {artwork.title || "Untitled"}
+              {artwork.title || 'Untitled'}
             </h3>
             {artwork.year && (
               <p className={styles.artworkYear}>{artwork.year}</p>
