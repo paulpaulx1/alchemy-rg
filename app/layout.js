@@ -48,7 +48,6 @@ export async function getSiteSettings() {
 export default async function RootLayout({ children }) {
   // Fetch site settings
   const settings = await getSiteSettings();
-  console.log("settings", settings);
 
   // Create style tag content
   const createStyleTagContent = () => {

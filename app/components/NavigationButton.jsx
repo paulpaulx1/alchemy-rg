@@ -152,7 +152,6 @@ function RecursiveNavMenu({ portfolios, level = 0, closeNav }) {
       // If both are null, keep original order
       return 0;
     });
-    console.log(sortedPortfolios);
 
     if (level === 0) {
       return (
