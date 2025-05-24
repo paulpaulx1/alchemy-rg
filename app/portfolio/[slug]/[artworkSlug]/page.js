@@ -159,14 +159,14 @@ export default async function ArtworkPage({ params }) {
         );
       case 'pdf':
         return (
-          <div className={styles.pdfContainer}>
+          <>
             <iframe
               src={artwork.pdfUrl}
               type='PDF Viewer'
               className={styles.pdfViewer}
               aria-label={`PDF viewer for ${artwork.title || 'artwork'}`}
             ></iframe>
-          </div>
+          </>
         );
       default:
         return null;
