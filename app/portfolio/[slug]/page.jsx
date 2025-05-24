@@ -1,13 +1,13 @@
-import { createClient } from "@sanity/client";
-import Link from "next/link";
-import ArtworkGrid from "@/app/components/ArtworkGrid";
-import styles from "./Portfolio.module.css";
+import { createClient } from '@sanity/client';
+import Link from 'next/link';
+import ArtworkGrid from '@/app/components/ArtworkGrid';
+import styles from './Portfolio.module.css';
 
 // Initialize the Sanity client (server-side)
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
-  apiVersion: "2023-03-01",
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2023-03-01',
   useCdn: false, // For fresh data in SSR
 });
 
@@ -49,6 +49,8 @@ export default async function Portfolio({ params }) {
       "videoUrl": video.asset->url,
       "videoThumbnailUrl": videoThumbnail.asset->url,
       externalVideoUrl,
+      "pdfUrl": pdfFile.asset->url,
+      "pdfThumbnailUrl": pdfThumbnail.asset->url,
       description,
       year,
       medium,
@@ -75,7 +77,7 @@ export default async function Portfolio({ params }) {
     return (
       <div className={styles.container}>
         <h1 className={styles.heading}>Portfolio not found</h1>
-        <Link href="/" className={styles.link}>
+        <Link href='/' className={styles.link}>
           Return to home
         </Link>
       </div>
@@ -83,13 +85,12 @@ export default async function Portfolio({ params }) {
   }
 
   console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
-  
 
   return (
     <div className={styles.container}>
       {/* Simplified breadcrumb - only show parent links */}
-      <div className={styles.breadcrumbs}> 
-        <Link href="/" className={styles.breadcrumbLink}>
+      <div className={styles.breadcrumbs}>
+        <Link href='/' className={styles.breadcrumbLink}>
           Home
         </Link>
         <span className={styles.breadcrumbSeparator}>/</span>
@@ -114,10 +115,10 @@ export default async function Portfolio({ params }) {
       <h1 className={styles.heading}>{portfolio.title}</h1>
 
       {/* Only show description if it's not just repeating the title */}
-      {portfolio.description && 
-       !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
-        <p className={styles.description}>{portfolio.description}</p>
-      )}
+      {portfolio.description &&
+        !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
+          <p className={styles.description}>{portfolio.description}</p>
+        )}
 
       {/* Show sub-portfolios if they exist */}
       {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
@@ -139,12 +140,14 @@ export default async function Portfolio({ params }) {
                 )}
                 <h3 className={styles.portfolioTitle}>{subPortfolio.title}</h3>
                 {/* Only show description if it exists AND doesn't just repeat the portfolio name */}
-                {subPortfolio.description && 
-                 !subPortfolio.description.includes(`Portfolio: ${subPortfolio.title}`) && (
-                  <p className={styles.portfolioDescription}>
-                    {subPortfolio.description}
-                  </p>
-                )}
+                {subPortfolio.description &&
+                  !subPortfolio.description.includes(
+                    `Portfolio: ${subPortfolio.title}`
+                  ) && (
+                    <p className={styles.portfolioDescription}>
+                      {subPortfolio.description}
+                    </p>
+                  )}
               </Link>
             ))}
           </div>
