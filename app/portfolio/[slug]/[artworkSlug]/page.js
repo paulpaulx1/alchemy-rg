@@ -53,7 +53,6 @@ function getEmbedUrl(url) {
 // Disable caching for fresh data
 export const revalidate = 0;
 
-
 export default async function ArtworkPage({ params }) {
   const resolvedParams = await params;
   const { slug: portfolioSlug, artworkSlug } = resolvedParams;
@@ -64,6 +63,8 @@ export default async function ArtworkPage({ params }) {
     *[_type == "artwork" && slug.current == $artworkSlug][0] {
       _id,
       title,
+      displayTitle,
+      "displayableTitle": select(displayTitle == true => title, null),
       mediaType,
       "slug": slug.current,
       "imageUrl": image.asset->url,
@@ -107,6 +108,8 @@ export default async function ArtworkPage({ params }) {
     *[_type == "artwork" && portfolio._ref == $portfolioId] | order(order asc) {
       _id,
       title,
+      displayTitle,
+      "displayableTitle": select(displayTitle == true => title, null),
       "slug": slug.current,
       order
     }
@@ -131,8 +134,8 @@ export default async function ArtworkPage({ params }) {
         return (
           <ResponsiveArtworkImage
             src={artwork.imageUrl}
-            alt={artwork.title}
-            title={artwork.title}
+            alt={artwork.displayableTitle || 'Artwork'}
+            title={artwork.displayableTitle}
           />
         );
       case 'video':
@@ -147,7 +150,7 @@ export default async function ArtworkPage({ params }) {
             ) : artwork.externalVideoUrl ? (
               <iframe
                 src={getEmbedUrl(artwork.externalVideoUrl)}
-                title={artwork.title}
+                title={artwork.displayableTitle || 'Video artwork'}
                 allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
                 allowFullScreen
                 className={styles.artworkVideo}
@@ -164,7 +167,7 @@ export default async function ArtworkPage({ params }) {
               src={artwork.pdfUrl}
               type='PDF Viewer'
               className={styles.pdfViewer}
-              aria-label={`PDF viewer for ${artwork.title || 'artwork'}`}
+              aria-label={`PDF viewer for ${artwork.displayableTitle || 'artwork'}`}
             ></iframe>
           </div>
         );
@@ -201,7 +204,9 @@ export default async function ArtworkPage({ params }) {
           {artwork.portfolio.title}
         </Link>
         <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>{artwork.title}</span>
+        <span className={styles.breadcrumbCurrent}>
+          {artwork.displayableTitle || 'Artwork'}
+        </span>
       </div>
 
       {/* Main Content Area */}
@@ -225,9 +230,11 @@ export default async function ArtworkPage({ params }) {
 
           {/* Desktop: Artwork Info - centered between buttons */}
           <div className={styles.desktopArtworkInfo}>
-            <h1 className={styles.artworkTitle}>
-              {artwork.title || 'Untitled'}
-            </h1>
+            {artwork.displayableTitle && (
+              <h1 className={styles.artworkTitle}>
+                {artwork.displayableTitle}
+              </h1>
+            )}
 
             <div className={styles.artworkDetails}>
               {artwork.year && (
@@ -259,4 +266,3 @@ export default async function ArtworkPage({ params }) {
     </div>
   );
 }
-

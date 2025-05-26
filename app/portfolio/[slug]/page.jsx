@@ -42,6 +42,8 @@ export default async function Portfolio({ params }) {
     "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
       _id,
       title,
+      displayTitle,
+      "displayableTitle": select(displayTitle == true => title, null),
       mediaType,
       "slug": slug.current,
       "imageUrl": image.asset->url,

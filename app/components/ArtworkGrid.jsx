@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import styles from './ArtworkGrid.module.css';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import styles from "./ArtworkGrid.module.css";
 
 export default function ArtworkGrid({ artworks }) {
   const params = useParams();
@@ -18,21 +18,21 @@ export default function ArtworkGrid({ artworks }) {
 
   function renderArtworkThumbnail(artwork) {
     switch (artwork.mediaType) {
-      case 'image':
+      case "image":
         return (
           <img
             src={artwork.imageUrl}
-            alt={artwork.title || 'Untitled artwork'}
+            alt={artwork.title || "Untitled artwork"}
             className={styles.thumbnail}
           />
         );
-      case 'video':
+      case "video":
         return (
           <div className={styles.videoThumbnail}>
             {artwork.videoThumbnailUrl ? (
               <img
                 src={artwork.videoThumbnailUrl}
-                alt={artwork.title || 'Untitled video'}
+                alt={artwork.title || "Untitled video"}
                 className={styles.thumbnail}
               />
             ) : (
@@ -43,14 +43,14 @@ export default function ArtworkGrid({ artworks }) {
             <div className={styles.playButton}>▶</div>
           </div>
         );
-      case 'pdf':
+      case "pdf":
         return (
           <>
             {artwork.pdfThumbnailUrl ? (
               <div className={styles.pdfThumbnail}>
                 <img
                   src={artwork.pdfThumbnailUrl}
-                  alt={artwork.title || 'Untitled PDF'}
+                  alt={artwork.title || "Untitled PDF"}
                   className={styles.thumbnail}
                 />
               </div>
@@ -58,9 +58,9 @@ export default function ArtworkGrid({ artworks }) {
               <div className={styles.pdfDefaultThumbnail}>
                 <img
                   src={
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317'
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317"
                   }
-                  alt={artwork.title || 'Untitled PDF'}
+                  alt={artwork.title || "Untitled PDF"}
                   className={styles.defaultThumbnail}
                 />
               </div>
@@ -75,7 +75,7 @@ export default function ArtworkGrid({ artworks }) {
   return (
     <div
       className={`${styles.grid} ${
-        isSingleArtwork ? styles.singleItemGrid : ''
+        isSingleArtwork ? styles.singleItemGrid : ""
       }`}
     >
       {artworks.map((artwork, index) => (
@@ -90,8 +90,11 @@ export default function ArtworkGrid({ artworks }) {
             </div>
           </div>
           <div className={styles.artworkInfo}>
-            <h3 className={styles.artworkTitle}>
-              {artwork.title || 'Untitled'}
+            <h3
+              className={styles.artworkTitle}
+              alt={artwork.displayableTitle || "Artwork"}
+            >
+              {artwork.displayableTitle}
             </h3>
             {artwork.year && (
               <p className={styles.artworkYear}>{artwork.year}</p>
