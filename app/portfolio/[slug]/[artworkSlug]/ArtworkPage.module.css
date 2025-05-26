@@ -413,20 +413,7 @@
     }
   }
 
-  /* PDF Container and Viewer Styles */
-.pdfContainer {
-  width: 90vw;
-  max-width: 1200px;
-  height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  position: relative;
-  background: #f5f5f5;
-  border-radius: 4px;
-  overflow: hidden;
-}
+  /* PDF Viewer Styles */
 
 .pdfViewer {
   width: 100%;
