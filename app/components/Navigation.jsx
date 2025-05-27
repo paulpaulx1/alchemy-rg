@@ -14,11 +14,15 @@ export default function Navigation({ portfolios }) {
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (navRef.current && !navRef.current.contains(event.target) && !event.target.closest('.menu-button')) {
+      if (
+        navRef.current &&
+        !navRef.current.contains(event.target) &&
+        !event.target.closest('.menu-button')
+      ) {
         setIsOpen(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -31,21 +35,21 @@ export default function Navigation({ portfolios }) {
   return (
     <>
       {/* Menu Button */}
-      <button 
-        className={`${styles.menuButton} menu-button`} 
+      <button
+        className={`${styles.menuButton} menu-button`}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
         Menu
       </button>
-      
+
       {/* Navigation Panel */}
-      <div 
+      <div
         ref={navRef}
         className={`${styles.navigationPanel} ${isOpen ? styles.open : ''}`}
       >
         <div className={styles.navigationInner}>
-          <button 
+          <button
             className={styles.closeButton}
             onClick={() => setIsOpen(false)}
           >
@@ -60,17 +64,20 @@ export default function Navigation({ portfolios }) {
 
 // Recursive component for portfolio navigation
 function RecursiveNavMenu({ portfolios, level = 0 }) {
-
   const sortedPortfolios = [...portfolios].sort((a, b) => a.order - b.order);
-  console.log(sortedPortfolios);
   return (
     <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
+      {level === 0 && (
+        <li className={styles.navItem}>
+          <div className={styles.navItemHeader}>
+            <Link href='/' className={styles.navLink}>
+              Home
+            </Link>
+          </div>
+        </li>
+      )}
       {sortedPortfolios.map((portfolio) => (
-        <NavItem 
-          key={portfolio._id} 
-          portfolio={portfolio} 
-          level={level} 
-        />
+        <NavItem key={portfolio._id} portfolio={portfolio} level={level} />
       ))}
     </ul>
   );
@@ -78,38 +85,41 @@ function RecursiveNavMenu({ portfolios, level = 0 }) {
 
 // Individual navigation item
 function NavItem({ portfolio, level }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const hasSubPortfolios = portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
-    
-    // Make any portfolio clickable, even if it's just a container
-    return (
-      <li className={styles.navItem}>
-        <div className={styles.navItemHeader}>
-          <Link 
-            href={`/portfolio/${portfolio.slug.current}`}
-            className={styles.navLink}
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasSubPortfolios =
+    portfolio.subPortfolios && portfolio.subPortfolios.length > 0;
+
+  // Make any portfolio clickable, even if it's just a container
+  return (
+    <li className={styles.navItem}>
+      <div className={styles.navItemHeader}>
+        <Link
+          href={`/portfolio/${portfolio.slug.current}`}
+          className={styles.navLink}
+        >
+          {portfolio.title}
+        </Link>
+
+        {hasSubPortfolios && (
+          <button
+            className={`${styles.expandButton} ${
+              isExpanded ? styles.expanded : ''
+            }`}
+            onClick={() => setIsExpanded(!isExpanded)}
+            aria-expanded={isExpanded}
           >
-            {portfolio.title}
-          </Link>
-          
-          {hasSubPortfolios && (
-            <button 
-              className={`${styles.expandButton} ${isExpanded ? styles.expanded : ''}`}
-              onClick={() => setIsExpanded(!isExpanded)}
-              aria-expanded={isExpanded}
-            >
-              +
-            </button>
-          )}
-        </div>
-        
-        {/* Recursive rendering of sub-portfolios */}
-        {hasSubPortfolios && isExpanded && (
-          <RecursiveNavMenu 
-            portfolios={portfolio.subPortfolios} 
-            level={level + 1} 
-          />
+            +
+          </button>
         )}
-      </li>
-    );
-  }
+      </div>
+
+      {/* Recursive rendering of sub-portfolios */}
+      {hasSubPortfolios && isExpanded && (
+        <RecursiveNavMenu
+          portfolios={portfolio.subPortfolios}
+          level={level + 1}
+        />
+      )}
+    </li>
+  );
+}
