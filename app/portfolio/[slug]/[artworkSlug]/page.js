@@ -3,6 +3,7 @@ import Link from 'next/link';
 import ResponsiveArtworkImage from '@/app/components/ResponsiveArtworkImage';
 import styles from './ArtworkPage.module.css';
 import PdfViewer from '@/app/components/PdfViewer';
+import ArtworkNavigation from '@/app/components/ArtworkNavigation';
 
 // Initialize the Sanity client
 const client = createClient({
@@ -164,7 +165,7 @@ export default async function ArtworkPage({ params }) {
       case 'pdf':
         return (
           <>
-            <PdfViewer artwork={artwork}/>
+            <PdfViewer artwork={artwork} />
           </>
         );
       default:
@@ -259,6 +260,10 @@ export default async function ArtworkPage({ params }) {
           </Link>
         </div>
       </div>
+      <ArtworkNavigation
+        prevUrl={`/portfolio/${portfolioSlug}/${prevArtwork.slug}`}
+        nextUrl={`/portfolio/${portfolioSlug}/${nextArtwork.slug}`}
+      />
     </div>
   );
 }
