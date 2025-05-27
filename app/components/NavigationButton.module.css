@@ -138,7 +138,7 @@
 }
   
 .navigationOverlay.open {
-    opacity: 1;
+    opacity: .85;
     visibility: visible;
      }
   
