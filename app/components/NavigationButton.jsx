@@ -1,4 +1,3 @@
-// app/components/NavigationButton.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -52,11 +51,50 @@ export default function NavigationButton({ portfolios }) {
   const [resetKey, setResetKey] = useState(0); // Add reset key for forcing re-render
   const navRef = useRef(null);
   const pathname = usePathname();
+  const scrollPositionRef = useRef(0);
+
+  // Function to lock body scroll
+  const lockBodyScroll = () => {
+    // Save current scroll position
+    scrollPositionRef.current = window.scrollY;
+    // Apply fixed positioning to body with the current scroll position
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${scrollPositionRef.current}px`;
+    document.body.style.overflow = 'hidden';
+  };
+
+  // Function to unlock body scroll
+  const unlockBodyScroll = () => {
+    // Remove fixed positioning
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
+    document.body.style.overflow = '';
+    // Restore scroll position
+    window.scrollTo(0, scrollPositionRef.current);
+  };
 
   // Function to close the navigation and reset expanded states
   const closeNav = () => {
     setIsOpen(false);
     setResetKey((prev) => prev + 1); // Force re-render to reset all expanded states
+    unlockBodyScroll();
+  };
+
+  // Enhanced function to open the navigation
+  const openNav = () => {
+    lockBodyScroll();
+    setIsOpen(true);
+  };
+
+  // Toggle menu with proper scroll locking
+  const toggleMenu = () => {
+    if (isOpen) {
+      closeNav();
+    } else {
+      openNav();
+    }
   };
 
   // Fetch portfolios
@@ -105,12 +143,21 @@ export default function NavigationButton({ portfolios }) {
     closeNav(); // Use closeNav instead of setIsOpen(false)
   }, [pathname]);
 
+  // Clean up scroll lock when component unmounts
+  useEffect(() => {
+    return () => {
+      if (isOpen) {
+        unlockBodyScroll();
+      }
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Menu Button */}
       <button
         className={`${styles.menuButton} menu-button`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleMenu}
         aria-expanded={isOpen}
       >
         Menu
@@ -119,7 +166,7 @@ export default function NavigationButton({ portfolios }) {
       {/* Overlay */}
       <div
         className={`${styles.navigationOverlay} ${isOpen ? styles.open : ''}`}
-        onClick={closeNav} // Use closeNav instead of () => setIsOpen(false)
+        onClick={closeNav}
       />
 
       {/* Navigation Panel */}
@@ -128,17 +175,18 @@ export default function NavigationButton({ portfolios }) {
         className={`${styles.navigationPanel} ${isOpen ? styles.open : ''}`}
       >
         <div className={styles.navigationInner}>
-          <button
-            className={styles.closeButton}
-            onClick={closeNav} // Use closeNav instead of () => setIsOpen(false)
-          >
-            ×
-          </button>
-          <RecursiveNavMenu
-            key={resetKey} // Add key prop to force re-render
-            portfolios={portfolios}
-            closeNav={closeNav}
-          />
+          <div className={styles.navigationHeader}>
+            <button className={styles.closeButton} onClick={closeNav}>
+              ×
+            </button>
+          </div>
+          <div className={styles.navigationContent}>
+            <RecursiveNavMenu
+              key={resetKey} // Add key prop to force re-render
+              portfolios={portfolios}
+              closeNav={closeNav}
+            />
+          </div>
         </div>
       </div>
     </>

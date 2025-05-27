@@ -43,6 +43,7 @@ a {
   text-decoration: none;
   color: #373737;
   font-weight: 500;
+  z-index: 9999;
 }
 
 .site-main {
