@@ -1,6 +1,7 @@
 import { createClient } from '@sanity/client';
 import Link from 'next/link';
 import ResponsiveArtworkImage from '@/app/components/ResponsiveArtworkImage';
+import SecurePDFViewer from '@/app/components/SecurePDFViewer';
 import styles from './ArtworkPage.module.css';
 
 // Initialize the Sanity client
@@ -162,14 +163,10 @@ export default async function ArtworkPage({ params }) {
         );
       case 'pdf':
         return (
-          <>
-            <iframe
-              src={artwork.pdfUrl}
-              type='PDF Viewer'
-              className={styles.pdfViewer}
-              aria-label={`PDF viewer for ${artwork.displayableTitle || 'artwork'}`}
-            ></iframe>
-          </>
+          <SecurePDFViewer 
+            pdfUrl={artwork.pdfUrl}
+            title={artwork.displayableTitle || 'PDF Artwork'}
+          />
         );
       default:
         return null;
