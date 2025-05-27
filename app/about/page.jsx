@@ -78,7 +78,7 @@ export default async function AboutPage() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>{artist.name}</h1>
+      {/* <h1 className={styles.heading}>{artist.name}</h1> */}
 
       <div className={styles.content}>
         {artist.profileImageUrl && (
