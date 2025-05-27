@@ -1,23 +1,26 @@
-// app/about/page.jsx
 import { createClient } from "@sanity/client";
 import { PortableText } from "@portabletext/react";
 import Link from "next/link";
 import styles from "./About.module.css";
+import ImageSection from "./ImageSection"; // We'll create this as a separate client component
 
-// Initialize the Sanity client
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
   apiVersion: "2023-03-01",
-  useCdn: false, // For fresh data in SSR
+  useCdn: false,
 });
 
+
 export default async function AboutPage() {
-  // Fetch artist data
   const artist = await client.fetch(`
     *[_type == "artist"][0] {
       name,
       "profileImageUrl": profileImage.asset->url,
+      "additionalImages": additionalImages[]{
+        "url": asset->url,
+        alt
+      },
       bio,
       email,
       website,
@@ -27,38 +30,29 @@ export default async function AboutPage() {
   `);
 
   const portableTextComponents = {
+    block: {
+      normal: ({children}) => <p className={styles.bioParagraph}>{children}</p>,
+    },
     list: {
       bullet: ({ children }) => (
-        <ul
-          style={{
-            paddingLeft: "1.5rem",
-            marginBottom: "1rem",
-            listStylePosition: "outside",
-          }}
-        >
+        <ul className={styles.bioList}>
           {children}
         </ul>
       ),
       number: ({ children }) => (
-        <ol
-          style={{
-            paddingLeft: "1.5rem",
-            marginBottom: "1rem",
-            listStylePosition: "outside",
-          }}
-        >
+        <ol className={styles.bioList}>
           {children}
         </ol>
       ),
     },
     listItem: {
       bullet: ({ children }) => (
-        <li style={{ marginBottom: "0.5rem", paddingLeft: "0.25rem" }}>
+        <li className={styles.bioListItem}>
           {children}
         </li>
       ),
       number: ({ children }) => (
-        <li style={{ marginBottom: "0.5rem", paddingLeft: "0.25rem" }}>
+        <li className={styles.bioListItem}>
           {children}
         </li>
       ),
@@ -78,18 +72,16 @@ export default async function AboutPage() {
 
   return (
     <div className={styles.container}>
-      {/* <h1 className={styles.heading}>{artist.name}</h1> */}
-
       <div className={styles.content}>
-        {artist.profileImageUrl && (
-          <div className={styles.profileImage}>
-            <img src={artist.profileImageUrl} alt={artist.name} />
-          </div>
-        )}
+        <ImageSection 
+          mainImage={artist.profileImageUrl}
+          additionalImages={artist.additionalImages}
+          artistName={artist.name}
+        />
 
         <div className={styles.bioContainer}>
           {artist.bio && (
-            <div className={`${styles.bio} prose prose-lg max-w-none`}>
+            <div className={styles.bio}>
               <PortableText
                 value={artist.bio}
                 components={portableTextComponents}
@@ -187,5 +179,4 @@ export default async function AboutPage() {
   );
 }
 
-// Enable ISR - updates the cache every 60 seconds
 export const revalidate = 60;

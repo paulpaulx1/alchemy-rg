@@ -1,40 +1,171 @@
-/* app/about/About.module.css */
+/* Add these styles to your existing About.module.css */
+
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    font-family: 'EB Garamond', serif;
-    margin-top: 80px;
-  }
-  
-  .heading {
-    font-size: 24px;
-    font-weight: 500;
-    margin-bottom: 40px;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-  }
-  
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'EB Garamond', serif;
+  margin-top: 80px; /* Keep the top margin */
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.bioParagraph {
+  margin-bottom: 1.25rem;
+}
+
+.bioList {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style-position: outside;
+}
+
+.bioListItem {
+  margin-bottom: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+/* Image Section */
+.imageSection {
+  width: 100%;
+}
+
+/* Mobile Carousel Styles */
+.mobileCarousel {
+  display: block;
+}
+
+.desktopStack {
+  display: none;
+}
+
+.carouselContainer {
+  position: relative;
+  width: 300px; /* Fixed width */
+  height: 375px; /* Fixed height (4:5 aspect ratio) */
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f5f5f5; /* Light background in case image doesn't fill */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carouselImage {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain; /* Contain instead of cover to show full image */
+  display: block;
+}
+
+.carouselButton {
+  position: fixed;
+  top: 280px;
+  background: none; /* Remove background */
+  color: inherit; /* Use the color from html/parent */
+  border: none;
+  width: auto; /* Remove fixed width */
+  height: auto; /* Remove fixed height */
+  border-radius: 0; /* Remove circle */
+  font-size: 40px; /* Larger since no background */
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.2s;
+  box-shadow: none; /* Remove shadow */
+  padding: 10px; /* Add some padding for touch target */
+}
+
+.carouselButton:hover {
+  opacity: 0.7; /* Simple hover effect */
+}
+
+.prevButton {
+  left: 10px;
+}
+
+.nextButton {
+  right: 10px;
+}
+
+.carouselDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.activeDot {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dot:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Desktop Styles */
+@media (min-width: 768px) {
   .content {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 40px;
   }
   
-  .profileImage {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto 20px;
+  .imageSection {
+    width: 280px;
+    flex-shrink: 0;
   }
   
-  .profileImage img {
+  /* Hide mobile carousel on desktop */
+  .mobileCarousel {
+    display: none;
+  }
+  
+  /* Show desktop stack on desktop */
+  .desktopStack {
+    display: block;
+  }
+  
+  .stackedImage {
+    margin-bottom: 20px;
+    aspect-ratio: 4/5; /* Standardize aspect ratio */
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  
+  .stackedImage:last-child {
+    margin-bottom: 0;
+  }
+  
+  .stackedImage img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover; /* Crop to fit standardized size */
     display: block;
   }
   
   .bioContainer {
     flex: 1;
+    min-width: 0; /* Prevents flex item from growing beyond container */
   }
   
   .bio {
@@ -42,61 +173,4 @@
     font-size: 18px;
     line-height: 1.6;
   }
-
-  .bio p {
-    margin-bottom: 20px;
-  }
-  
-  .contactInfo {
-    margin-top: 20px;
-    font-size: 16px;
-  }
-  
-  .contactInfo p {
-    margin-bottom: 10px;
-  }
-  
-  .socialLinks {
-    display: flex;
-    gap: 15px;
-    margin: 15px 0;
-    flex-wrap: wrap;
-  }
-  
-  .socialLinks a {
-    color: #333;
-    text-decoration: none;
-  }
-  
-  .socialLinks a:hover {
-    text-decoration: underline;
-  }
-  
-  .cvLink {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 8px 16px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    text-decoration: none;
-    color: #333;
-  }
-  
-  .cvLink:hover {
-    background-color: #f0f0f0;
-  }
-  
-  @media (min-width: 768px) {
-    .content {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-    
-    .profileImage {
-      margin: 0;
-    }
-    
-    .bioContainer {
-      padding-left: 30px;
-    }
-  }
+}
