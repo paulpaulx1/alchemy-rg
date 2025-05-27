@@ -79,7 +79,7 @@ export default function NavigationButton({ portfolios }) {
   const closeNav = () => {
     setIsOpen(false);
     setResetKey((prev) => prev + 1); // Force re-render to reset all expanded states
-    unlockBodyScroll();
+    // unlockBodyScroll();
   };
 
   // Enhanced function to open the navigation
