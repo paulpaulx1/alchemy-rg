@@ -41,6 +41,10 @@
     font-size: 18px;
     line-height: 1.6;
   }
+
+  .bio p {
+    margin-bottom: 20px;
+  }
   
   .contactInfo {
     margin-top: 20px;
