@@ -147,6 +147,7 @@ export default function NavigationButton({ portfolios }) {
 
 // Recursive component for portfolio navigation
 function RecursiveNavMenu({ portfolios, level = 0, closeNav }) {
+  const pathname = usePathname();
   // If this is the top level menu (level 0), add the Contact link at the end
   const sortedPortfolios = [...portfolios].sort((a, b) => {
     // If both have order values, compare them
@@ -170,7 +171,16 @@ function RecursiveNavMenu({ portfolios, level = 0, closeNav }) {
       <ul className={`${styles.navList} ${styles[`level${level}`]}`}>
         <li className={styles.navItem}>
           <div className={styles.navItemHeader}>
-            <Link href='/' className={styles.navLink} onClick={closeNav}>
+            <Link
+              href='/'
+              className={styles.navLink}
+              onClick={(e) => {
+                if (pathname === '/') {
+                  e.preventDefault();
+                }
+                closeNav();
+              }}
+            >
               Home
             </Link>
           </div>
