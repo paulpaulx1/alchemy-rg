@@ -45,6 +45,8 @@ export default async function Portfolio({ params }) {
       externalVideoUrl,
       "pdfUrl": pdfFile.asset->url,
       "pdfThumbnailUrl": pdfThumbnail.asset->url,
+      "audioUrl": audioFile.asset->url,
+      "audioThumbnailUrl": audioThumbnail.asset->url,
       description,
       year,
       medium,

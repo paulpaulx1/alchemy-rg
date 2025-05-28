@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import styles from "./ArtworkGrid.module.css";
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import styles from './ArtworkGrid.module.css';
 
 export default function ArtworkGrid({ artworks }) {
   const params = useParams();
@@ -17,6 +17,8 @@ export default function ArtworkGrid({ artworks }) {
   const isSingleArtwork = artworks.length === 1;
 
   function renderArtworkThumbnail(artwork) {
+    console.log('artwork in ArtworkGrid', artwork);
+
     switch (artwork.mediaType) {
       case 'image':
         return (
@@ -77,11 +79,8 @@ export default function ArtworkGrid({ artworks }) {
                 className={styles.thumbnail}
               />
             ) : (
-              <div className={styles.audioPlaceholder}>
-                <span>Audio</span>
-              </div>
+              <div className={styles.playButton}>♫</div>
             )}
-            <div className={styles.playButton}>♫</div>
           </div>
         );
       default:
@@ -92,7 +91,7 @@ export default function ArtworkGrid({ artworks }) {
   return (
     <div
       className={`${styles.grid} ${
-        isSingleArtwork ? styles.singleItemGrid : ""
+        isSingleArtwork ? styles.singleItemGrid : ''
       }`}
     >
       {artworks.map((artwork, index) => (
@@ -109,7 +108,7 @@ export default function ArtworkGrid({ artworks }) {
           <div className={styles.artworkInfo}>
             <h3
               className={styles.artworkTitle}
-              alt={artwork.displayableTitle || "Artwork"}
+              alt={artwork.displayableTitle || 'Artwork'}
             >
               {artwork.displayableTitle}
             </h3>
