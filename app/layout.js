@@ -1,21 +1,13 @@
 // app/layout.js
-import Link from "next/link";
-import "./globals.css";
-import NavigationMenu from "../components/NavigationMenu";
-import { createClient } from "@sanity/client";
+import Link from 'next/link';
+import './globals.css';
+import NavigationMenu from '../components/NavigationMenu';
+import { client } from '@/lib/client';
 
 export const metadata = {
-  title: "Raj Gupta | Artist",
-  description: "The artistic works of Raj Gupta",
+  title: 'Raj Gupta | Artist',
+  description: 'The artistic works of Raj Gupta',
 };
-
-// Initialize the Sanity client with caching disabled
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "your-project-id",
-  apiVersion: "2023-03-01",
-  dataset: "production",
-  useCdn: false, // Disable CDN caching - always get fresh data
-});
 
 // Build portfolio tree from flat data
 function buildPortfolioTree(portfolios) {
@@ -44,8 +36,6 @@ function buildPortfolioTree(portfolios) {
       rootPortfolios.push(portfolioMap[portfolio._id]);
     }
   });
-  console.log('root portfolios', rootPortfolios);
-
   return rootPortfolios;
 }
 
@@ -62,7 +52,7 @@ export async function getSiteSettings() {
       font
     }
   `);
-  
+
   // If there's no active setting, fall back to the first one
   if (!activeSettings) {
     return client.fetch(`
@@ -73,7 +63,7 @@ export async function getSiteSettings() {
       }
     `);
   }
-  
+
   return activeSettings;
 }
 
@@ -90,6 +80,9 @@ export default async function RootLayout({ children }) {
         "parentId": parentPortfolio._ref
       }
     `);
+
+    console.log('allPortfolios', allPortfolios);
+    
 
   // Add an "About" item at the top level
   const aboutItem = {
@@ -207,49 +200,49 @@ export default async function RootLayout({ children }) {
 function getFontFamily(fontValue) {
   switch (fontValue) {
     // Current font
-    case "eb-garamond":
+    case 'eb-garamond':
       return "'EB Garamond', serif";
-      
+
     // Serif fonts
-    case "playfair-display":
+    case 'playfair-display':
       return "'Playfair Display', serif";
-    case "merriweather":
+    case 'merriweather':
       return "'Merriweather', serif";
-    case "libre-baskerville":
+    case 'libre-baskerville':
       return "'Libre Baskerville', serif";
-    case "lora":
+    case 'lora':
       return "'Lora', serif";
-    case "cormorant-garamond":
+    case 'cormorant-garamond':
       return "'Cormorant Garamond', serif";
-      
+
     // Sans-serif fonts
-    case "open-sans":
+    case 'open-sans':
       return "'Open Sans', sans-serif";
-    case "roboto":
+    case 'roboto':
       return "'Roboto', sans-serif";
-    case "lato":
+    case 'lato':
       return "'Lato', sans-serif";
-    case "montserrat":
+    case 'montserrat':
       return "'Montserrat', sans-serif";
-    case "raleway":
+    case 'raleway':
       return "'Raleway', sans-serif";
-    case "work-sans":
+    case 'work-sans':
       return "'Work Sans', sans-serif";
-    case "poppins":
+    case 'poppins':
       return "'Poppins', sans-serif";
-      
+
     // Display/artistic fonts
-    case "cormorant":
+    case 'cormorant':
       return "'Cormorant', serif";
-    case "cinzel":
+    case 'cinzel':
       return "'Cinzel', serif";
-    case "josefin-sans":
+    case 'josefin-sans':
       return "'Josefin Sans', sans-serif";
-    case "josefin-slab":
+    case 'josefin-slab':
       return "'Josefin Slab', serif";
-    case "quicksand":
+    case 'quicksand':
       return "'Quicksand', sans-serif";
-      
+
     // Default fallback
     default:
       return "'EB Garamond', serif";

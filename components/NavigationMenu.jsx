@@ -6,8 +6,6 @@ import { usePathname } from 'next/navigation';
 import styles from './NavigationMenu.module.css';
 
 export default function NavigationMenu({ portfolioNavItems }) {
-  console.log('Portfolios prop in NavigationMenu',portfolioNavItems );
-  
   const [isOpen, setIsOpen] = useState(false);
   const [resetKey, setResetKey] = useState(0); // Add reset key for forcing re-render
   const navRef = useRef(null);

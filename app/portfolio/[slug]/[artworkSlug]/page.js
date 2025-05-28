@@ -1,17 +1,9 @@
-import { createClient } from '@sanity/client';
+import { client } from '@/lib/client';
 import Link from 'next/link';
 import ResponsiveArtworkImage from '@/components/ResponsiveArtworkImage';
 import styles from './ArtworkPage.module.css';
 import PdfViewer from '@/components/PdfViewer';
 import ArtworkNavigation from '@/components/ArtworkNavigation';
-
-// Initialize the Sanity client
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  apiVersion: '2023-03-01',
-  useCdn: false,
-});
 
 // Generate static params for all artwork pages
 export async function generateStaticParams() {
