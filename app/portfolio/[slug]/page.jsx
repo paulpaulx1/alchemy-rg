@@ -2,6 +2,7 @@ import { client } from '@/lib/client';
 import Link from 'next/link';
 import ArtworkGrid from '@/components/ArtworkGrid';
 import styles from './Portfolio.module.css';
+import { PortableText } from '@portabletext/react';
 
 // Generate static params for static generation
 export async function generateStaticParams() {
@@ -27,6 +28,7 @@ export default async function Portfolio({ params }) {
     _id,
     title,
     description,
+    richTextBlock,
     "parentPortfolio": parentPortfolio->{
       title,
       "slug": slug.current
@@ -69,6 +71,28 @@ export default async function Portfolio({ params }) {
     { slug }
   );
 
+  console.log('portfolio in portfolio page', portfolio);
+
+  const portableTextComponents = {
+    block: {
+      normal: ({ children }) => (
+        <p className={styles.bioParagraph}>{children}</p>
+      ),
+    },
+    list: {
+      bullet: ({ children }) => <ul className={styles.bioList}>{children}</ul>,
+      number: ({ children }) => <ol className={styles.bioList}>{children}</ol>,
+    },
+    listItem: {
+      bullet: ({ children }) => (
+        <li className={styles.bioListItem}>{children}</li>
+      ),
+      number: ({ children }) => (
+        <li className={styles.bioListItem}>{children}</li>
+      ),
+    },
+  };
+
   if (!portfolio) {
     return (
       <div className={styles.container}>
@@ -109,10 +133,23 @@ export default async function Portfolio({ params }) {
       <h1 className={styles.heading}>{portfolio.title}</h1>
 
       {/* Only show description if it's not just repeating the title */}
-      {portfolio.description &&
+      {/* {portfolio.description &&
         !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
           <p className={styles.description}>{portfolio.description}</p>
-        )}
+        )} */}
+      {portfolio.richTextBlock ? (
+        <div className={styles.description}>
+          <PortableText
+            value={portfolio.richTextBlock}
+            components={portableTextComponents}
+          />
+        </div>
+      ) : (
+        !portfolio.richTextBlock && portfolio.description &&
+        !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
+          <p className={styles.description}>{portfolio.description}</p>
+        )
+      )}
 
       {/* Show sub-portfolios if they exist */}
       {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (

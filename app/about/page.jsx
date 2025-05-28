@@ -21,6 +21,9 @@ export default async function AboutPage() {
     }
   `);
 
+  console.log('artist in about', artist);
+  
+
   const portableTextComponents = {
     block: {
       normal: ({children}) => <p className={styles.bioParagraph}>{children}</p>,
