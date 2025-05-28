@@ -47,7 +47,7 @@ function buildPortfolioTree(portfolios) {
 
 export default function NavigationButton({ portfolios }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [setPortfolios] = useState([]);
+  const [fetchedPortfolios,setFetchedPortfolios] = useState([]);
   const [resetKey, setResetKey] = useState(0); // Add reset key for forcing re-render
   const navRef = useRef(null);
   const pathname = usePathname();
@@ -113,7 +113,7 @@ export default function NavigationButton({ portfolios }) {
 
         // Build the recursive tree structure
         const portfolioTree = buildPortfolioTree(allPortfolios);
-        setPortfolios(portfolioTree);
+        setFetchedPortfolios(portfolioTree);
       } catch (error) {
         console.error('Error fetching portfolios:', error);
       }
@@ -183,7 +183,7 @@ export default function NavigationButton({ portfolios }) {
           <div className={styles.navigationContent}>
             <RecursiveNavMenu
               key={resetKey} // Add key prop to force re-render
-              portfolios={portfolios}
+              portfolios={fetchedPortfolios}
               closeNav={closeNav}
             />
           </div>
