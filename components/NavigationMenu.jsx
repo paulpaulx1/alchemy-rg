@@ -38,7 +38,7 @@ export default function NavigationMenu({ portfolioNavItems }) {
   const closeNav = () => {
     setIsOpen(false);
     setResetKey((prev) => prev + 1); // Force re-render to reset all expanded states
-    // unlockBodyScroll();
+    unlockBodyScroll();
   };
 
   // Enhanced function to open the navigation
@@ -64,17 +64,22 @@ export default function NavigationMenu({ portfolioNavItems }) {
         !navRef.current.contains(event.target) &&
         !event.target.closest('.menu-button')
       ) {
-        closeNav(); // Use closeNav instead of setIsOpen(false)
+        closeNav();
       }
     }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
 
   // Close menu when route changes
   useEffect(() => {
-    closeNav(); // Use closeNav instead of setIsOpen(false)
+    closeNav();
+    setTimeout(function () {
+      window.scrollTo(500, 0);
+    }, 0);
   }, [pathname]);
 
   // Clean up scroll lock when component unmounts
@@ -221,6 +226,7 @@ function NavItem({ portfolio, level, closeNav }) {
       e.preventDefault();
       closeNav();
     }
+    
     // If navigating to a different page, let the link work normally
     // and let the useEffect that listens to pathname changes close the nav
   };

@@ -81,9 +81,6 @@ export default async function RootLayout({ children }) {
       }
     `);
 
-    console.log('allPortfolios', allPortfolios);
-    
-
   // Add an "About" item at the top level
   const aboutItem = {
     _id: 'about-page',

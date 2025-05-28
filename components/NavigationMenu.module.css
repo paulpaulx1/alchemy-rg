@@ -59,7 +59,7 @@
   overflow-y: auto; /* Only this section scrolls */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   overscroll-behavior: contain;
-  padding: 0 35px 120px
+  padding: 0 31px 120px
 }
 
 .closeButton {
