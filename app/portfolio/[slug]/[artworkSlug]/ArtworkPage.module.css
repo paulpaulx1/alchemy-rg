@@ -246,7 +246,7 @@
     .breadcrumbs {
       font-size: 0.8rem;
       top: 70px; /* Adjusted for mobile header */
-      left: 15px;
+      left: 8px;
       width: 100%;
     }
     
@@ -414,6 +414,7 @@
     
     .desktopArtworkInfo {
       max-width: 75%;
+      margin-bottom: 60px;
     }
   }
 

@@ -126,8 +126,6 @@ export default async function ArtworkPage({ params }) {
       : allArtworks[0];
 
   function renderArtworkDisplay(artwork) {
-    console.log('artwork in page', artwork);
-    
     switch (artwork.mediaType) {
       case 'image':
         return (

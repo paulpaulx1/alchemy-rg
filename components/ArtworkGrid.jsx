@@ -17,8 +17,6 @@ export default function ArtworkGrid({ artworks }) {
   const isSingleArtwork = artworks.length === 1;
 
   function renderArtworkThumbnail(artwork) {
-    console.log('artwork in ArtworkGrid', artwork);
-
     switch (artwork.mediaType) {
       case 'image':
         return (
@@ -71,17 +69,27 @@ export default function ArtworkGrid({ artworks }) {
         );
       case 'audio':
         return (
-          <div className={styles.audioThumbnail}>
+          <>
             {artwork.audioThumbnailUrl ? (
-              <img
-                src={artwork.audioThumbnailUrl}
-                alt={artwork.title || 'Untitled audio'}
-                className={styles.thumbnail}
-              />
+              <div className={styles.pdfThumbnail}>
+                <img
+                  src={artwork.audioThumbnailUrl}
+                  alt={artwork.title || 'Untitled audio'}
+                  className={styles.thumbnail}
+                />
+              </div>
             ) : (
-              <div className={styles.playButton}>♫</div>
+              <div className={styles.pdfDefaultThumbnail}>
+                <img
+                  src={
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png?20231011144101'
+                  }
+                  alt={artwork.title || 'Untitled Audio File'}
+                  className={styles.defaultThumbnail}
+                />
+              </div>
             )}
-          </div>
+          </>
         );
       default:
         return null;
