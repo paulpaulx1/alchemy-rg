@@ -1,9 +1,9 @@
 import { createClient } from '@sanity/client';
 import Link from 'next/link';
-import ResponsiveArtworkImage from '@/app/components/ResponsiveArtworkImage';
+import ResponsiveArtworkImage from '@/components/ResponsiveArtworkImage';
 import styles from './ArtworkPage.module.css';
-import PdfViewer from '@/app/components/PdfViewer';
-import ArtworkNavigation from '@/app/components/ArtworkNavigation';
+import PdfViewer from '@/components/PdfViewer';
+import ArtworkNavigation from '@/components/ArtworkNavigation';
 
 // Initialize the Sanity client
 const client = createClient({

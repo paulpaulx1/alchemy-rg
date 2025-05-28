@@ -1,5 +1,5 @@
 import { createClient } from '@sanity/client';
-import FeaturedPortfolio from './components/FeaturedPortfolio';
+import FeaturedPortfolio from '../components/FeaturedPortfolio';
 
 // Initialize the Sanity client (server-side)
 const client = createClient({

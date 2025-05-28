@@ -1,7 +1,7 @@
 // app/layout.js
 import Link from "next/link";
 import "./globals.css";
-import NavigationMenu from "./components/NavigationMenu";
+import NavigationMenu from "../components/NavigationMenu";
 import { createClient } from "@sanity/client";
 
 export const metadata = {

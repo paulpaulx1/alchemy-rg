@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client';
 import Link from 'next/link';
-import ArtworkGrid from '@/app/components/ArtworkGrid';
+import ArtworkGrid from '@/components/ArtworkGrid';
 import styles from './Portfolio.module.css';
 
 // Initialize the Sanity client (server-side)
