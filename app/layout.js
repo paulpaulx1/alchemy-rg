@@ -1,7 +1,7 @@
 // app/layout.js
 import Link from "next/link";
 import "./globals.css";
-import GlobalNavigation from "./components/GlobalNavigation";
+import NavigationMenu from "./components/NavigationMenu";
 import { createClient } from "@sanity/client";
 
 export const metadata = {
@@ -16,6 +16,38 @@ const client = createClient({
   dataset: "production",
   useCdn: false, // Disable CDN caching - always get fresh data
 });
+
+// Build portfolio tree from flat data
+function buildPortfolioTree(portfolios) {
+  const portfolioMap = {};
+  const rootPortfolios = [];
+
+  // First pass: map all portfolios by ID
+  portfolios.forEach((portfolio) => {
+    portfolioMap[portfolio._id] = {
+      ...portfolio,
+      subPortfolios: [],
+    };
+  });
+
+  // Second pass: build the tree structure
+  portfolios.forEach((portfolio) => {
+    if (portfolio.parentId) {
+      // This is a child portfolio, add it to its parent
+      if (portfolioMap[portfolio.parentId]) {
+        portfolioMap[portfolio.parentId].subPortfolios.push(
+          portfolioMap[portfolio._id]
+        );
+      }
+    } else {
+      // This is a root portfolio
+      rootPortfolios.push(portfolioMap[portfolio._id]);
+    }
+  });
+  console.log('root portfolios', rootPortfolios);
+
+  return rootPortfolios;
+}
 
 // Disable Next.js caching for this function
 export const dynamic = 'force-dynamic';
@@ -48,10 +80,35 @@ export async function getSiteSettings() {
 export default async function RootLayout({ children }) {
   // Fetch site settings
   const settings = await getSiteSettings();
+  // Server-side data fetching
+  const allPortfolios = await client.fetch(`
+      *[_type == "portfolio"] {
+        _id,
+        title,
+        slug,
+        order,
+        "parentId": parentPortfolio._ref
+      }
+    `);
+
+  // Add an "About" item at the top level
+  const aboutItem = {
+    _id: 'about-page',
+    title: 'About',
+    slug: { current: 'about' },
+    subPortfolios: [],
+    isCustomRoute: true,
+  };
+
+  // Build the recursive tree structure
+  const portfolioTree = buildPortfolioTree(allPortfolios);
+
+  // Add the About item at the beginning of the array
+  const navItems = [aboutItem, ...portfolioTree];
 
   // Create style tag content
   const createStyleTagContent = () => {
-    let styles = "";
+    let styles = '';
 
     if (settings?.backgroundColor?.hex) {
       styles += `
@@ -99,42 +156,47 @@ export default async function RootLayout({ children }) {
   const cacheBuster = Date.now();
 
   return (
-    <html lang="en">
+    <html lang='en'>
       <head>
         {/* Load custom font if selected */}
-        {settings?.font && settings.font !== "eb-garamond" && (
+        {settings?.font && settings.font !== 'eb-garamond' && (
           <link
             href={`https://fonts.googleapis.com/css2?family=${settings.font.replace(
-              "-",
-              "+"
+              '-',
+              '+'
             )}:wght@400;500;600&display=swap`}
-            rel="stylesheet"
+            rel='stylesheet'
           />
         )}
 
         {/* Add the dynamic styles with a cache buster */}
         {settings && (
           <style
-            dangerouslySetInnerHTML={{ 
-              __html: createStyleTagContent() + `\n/* Cache buster: ${cacheBuster} */` 
+            dangerouslySetInnerHTML={{
+              __html:
+                createStyleTagContent() +
+                `\n/* Cache buster: ${cacheBuster} */`,
             }}
           />
         )}
-        
+
         {/* Meta tags to prevent browser caching */}
-        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta httpEquiv="Expires" content="0" />
+        <meta
+          httpEquiv='Cache-Control'
+          content='no-cache, no-store, must-revalidate'
+        />
+        <meta httpEquiv='Pragma' content='no-cache' />
+        <meta httpEquiv='Expires' content='0' />
       </head>
       <body>
-        <div className="site-wrapper">
-          <header className="site-header">
-            <Link href="/about" className="site-title">
+        <div className='site-wrapper'>
+          <header className='site-header'>
+            <Link href='/about' className='site-title'>
               Raj Gupta
             </Link>
-            <GlobalNavigation />
+            <NavigationMenu portfolioNavItems={navItems} />
           </header>
-          <main className="site-main">{children}</main>
+          <main className='site-main'>{children}</main>
         </div>
       </body>
     </html>

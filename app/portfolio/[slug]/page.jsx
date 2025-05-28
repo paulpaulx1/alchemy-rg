@@ -86,8 +86,6 @@ export default async function Portfolio({ params }) {
     );
   }
 
-  console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
-
   return (
     <div className={styles.container}>
       {/* Simplified breadcrumb - only show parent links */}
