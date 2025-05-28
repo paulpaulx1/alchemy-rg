@@ -42,6 +42,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  margin-bottom: 45px;
 }
 
 .playButton:hover {
@@ -118,6 +119,7 @@
   border-radius: 50%;
   transition: all 0.2s ease;
   background-color: transparent !important;
+  margin-bottom: 45px;
 }
 
 .volumeButton:hover {
@@ -234,12 +236,14 @@
   
   .playButton {
     font-size: 16px;
-    margin-top: 80px;
+    margin-top: 120px;
+    margin-bottom: 0px;
   }
   
   .volumeButton {
     font-size: 18px;
-    margin-top: 80px;
+    margin-top: 120px;
+    margin-bottom: 0px;
   }
 
   .volume-container {

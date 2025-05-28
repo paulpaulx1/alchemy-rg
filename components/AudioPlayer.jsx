@@ -296,7 +296,7 @@ export default function AudioPlayer({ src, title }) {
             {getVolumeIcon()}
           </button>
 
-          <div
+          {/* <div
             className={`${styles.volumeSliderContainer} ${
               showVolumeSlider ? styles.visible : ''
             }`}
@@ -324,7 +324,7 @@ export default function AudioPlayer({ src, title }) {
                 style={{ left: `${(isMuted ? 0 : volume) * 100}%` }}
               />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
