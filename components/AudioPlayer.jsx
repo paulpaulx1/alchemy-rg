@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './AudioPlayer.module.css';
+import { PlayIcon, PauseIcon, SpeakerHighIcon, SpeakerLowIcon, SpeakerNoneIcon, SpeakerSimpleSlashIcon } from '@phosphor-icons/react';
 
 export default function AudioPlayer({ src, title }) {
   const audioRef = useRef(null);
@@ -235,10 +236,10 @@ export default function AudioPlayer({ src, title }) {
   }, []);
 
   const getVolumeIcon = () => {
-    if (isMuted || volume === 0) return '🔇';
-    if (volume < 0.3) return '🔈';
-    if (volume < 0.7) return '🔉';
-    return '🔊';
+    if (isMuted || volume === 0) return <SpeakerSimpleSlashIcon size={32}/>;
+    if (volume < 0.3) return <SpeakerNoneIcon size={32}/>;
+    if (volume < 0.7) return <SpeakerLowIcon size={32}/>;
+    return <SpeakerHighIcon size={32}/>;
   };
 
   return (
@@ -253,7 +254,7 @@ export default function AudioPlayer({ src, title }) {
           className={`${styles.playButton} ${styles.touchTarget}`}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? '⏸️' : '▶️'}
+          {isPlaying ? <PauseIcon size={32}/> : <PlayIcon size={32}/>}
         </button>
 
         <div className={styles.progressContainer}>
