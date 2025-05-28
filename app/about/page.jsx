@@ -1,16 +1,8 @@
-import { createClient } from "@sanity/client";
+import { client } from "@/lib/client";
 import { PortableText } from "@portabletext/react";
 import Link from "next/link";
 import styles from "./About.module.css";
 import ImageSection from "./ImageSection"; // We'll create this as a separate client component
-
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
-  apiVersion: "2023-03-01",
-  useCdn: false,
-});
-
 
 export default async function AboutPage() {
   const artist = await client.fetch(`

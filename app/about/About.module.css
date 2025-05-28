@@ -65,8 +65,6 @@
 }
 
 .carouselButton {
-  position: fixed;
-  top: 280px;
   background: none; /* Remove background */
   color: inherit; /* Use the color from html/parent */
   border: none;
@@ -91,11 +89,17 @@
 .prevButton {
   left: 10px;
   z-index: 99;
+  position: absolute;
+  top: 17%;
+  transform: translateY(-50%);
 }
 
 .nextButton {
   right: 10px;
   z-index: 99; 
+  position: absolute;
+  top: 17%;
+  transform: translateY(-50%);
 }
 
 .carouselDots {
