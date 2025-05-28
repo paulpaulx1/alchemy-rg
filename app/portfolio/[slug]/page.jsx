@@ -1,15 +1,7 @@
-import { createClient } from '@sanity/client';
+import { client } from '@/lib/client';
 import Link from 'next/link';
-import ArtworkGrid from '@/app/components/ArtworkGrid';
+import ArtworkGrid from '@/components/ArtworkGrid';
 import styles from './Portfolio.module.css';
-
-// Initialize the Sanity client (server-side)
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  apiVersion: '2023-03-01',
-  useCdn: false, // For fresh data in SSR
-});
 
 // Generate static params for static generation
 export async function generateStaticParams() {
@@ -85,8 +77,6 @@ export default async function Portfolio({ params }) {
       </div>
     );
   }
-
-  console.log('portfolio', portfolio, 'portfolio artworks', portfolio.artworks);
 
   return (
     <div className={styles.container}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from '../portfolio/[slug]/[artworkSlug]/ArtworkPage.module.css';
+import styles from '../app/portfolio/[slug]/[artworkSlug]/ArtworkPage.module.css';
 
 export default function ResponsiveArtworkImage({ src, alt, title }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

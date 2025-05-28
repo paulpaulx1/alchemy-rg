@@ -1,21 +1,43 @@
 // app/layout.js
-import Link from "next/link";
-import "./globals.css";
-import GlobalNavigation from "./components/GlobalNavigation";
-import { createClient } from "@sanity/client";
+import Link from 'next/link';
+import './globals.css';
+import NavigationMenu from '../components/NavigationMenu';
+import { client } from '@/lib/client';
 
 export const metadata = {
-  title: "Raj Gupta | Artist",
-  description: "The artistic works of Raj Gupta",
+  title: 'Raj Gupta | Artist',
+  description: 'The artistic works of Raj Gupta',
 };
 
-// Initialize the Sanity client with caching disabled
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "your-project-id",
-  apiVersion: "2023-03-01",
-  dataset: "production",
-  useCdn: false, // Disable CDN caching - always get fresh data
-});
+// Build portfolio tree from flat data
+function buildPortfolioTree(portfolios) {
+  const portfolioMap = {};
+  const rootPortfolios = [];
+
+  // First pass: map all portfolios by ID
+  portfolios.forEach((portfolio) => {
+    portfolioMap[portfolio._id] = {
+      ...portfolio,
+      subPortfolios: [],
+    };
+  });
+
+  // Second pass: build the tree structure
+  portfolios.forEach((portfolio) => {
+    if (portfolio.parentId) {
+      // This is a child portfolio, add it to its parent
+      if (portfolioMap[portfolio.parentId]) {
+        portfolioMap[portfolio.parentId].subPortfolios.push(
+          portfolioMap[portfolio._id]
+        );
+      }
+    } else {
+      // This is a root portfolio
+      rootPortfolios.push(portfolioMap[portfolio._id]);
+    }
+  });
+  return rootPortfolios;
+}
 
 // Disable Next.js caching for this function
 export const dynamic = 'force-dynamic';
@@ -30,7 +52,7 @@ export async function getSiteSettings() {
       font
     }
   `);
-  
+
   // If there's no active setting, fall back to the first one
   if (!activeSettings) {
     return client.fetch(`
@@ -41,17 +63,45 @@ export async function getSiteSettings() {
       }
     `);
   }
-  
+
   return activeSettings;
 }
 
 export default async function RootLayout({ children }) {
   // Fetch site settings
   const settings = await getSiteSettings();
+  // Server-side data fetching
+  const allPortfolios = await client.fetch(`
+      *[_type == "portfolio"] {
+        _id,
+        title,
+        slug,
+        order,
+        "parentId": parentPortfolio._ref
+      }
+    `);
+
+    console.log('allPortfolios', allPortfolios);
+    
+
+  // Add an "About" item at the top level
+  const aboutItem = {
+    _id: 'about-page',
+    title: 'About',
+    slug: { current: 'about' },
+    subPortfolios: [],
+    isCustomRoute: true,
+  };
+
+  // Build the recursive tree structure
+  const portfolioTree = buildPortfolioTree(allPortfolios);
+
+  // Add the About item at the beginning of the array
+  const navItems = [aboutItem, ...portfolioTree];
 
   // Create style tag content
   const createStyleTagContent = () => {
-    let styles = "";
+    let styles = '';
 
     if (settings?.backgroundColor?.hex) {
       styles += `
@@ -99,42 +149,47 @@ export default async function RootLayout({ children }) {
   const cacheBuster = Date.now();
 
   return (
-    <html lang="en">
+    <html lang='en'>
       <head>
         {/* Load custom font if selected */}
-        {settings?.font && settings.font !== "eb-garamond" && (
+        {settings?.font && settings.font !== 'eb-garamond' && (
           <link
             href={`https://fonts.googleapis.com/css2?family=${settings.font.replace(
-              "-",
-              "+"
+              '-',
+              '+'
             )}:wght@400;500;600&display=swap`}
-            rel="stylesheet"
+            rel='stylesheet'
           />
         )}
 
         {/* Add the dynamic styles with a cache buster */}
         {settings && (
           <style
-            dangerouslySetInnerHTML={{ 
-              __html: createStyleTagContent() + `\n/* Cache buster: ${cacheBuster} */` 
+            dangerouslySetInnerHTML={{
+              __html:
+                createStyleTagContent() +
+                `\n/* Cache buster: ${cacheBuster} */`,
             }}
           />
         )}
-        
+
         {/* Meta tags to prevent browser caching */}
-        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta httpEquiv="Expires" content="0" />
+        <meta
+          httpEquiv='Cache-Control'
+          content='no-cache, no-store, must-revalidate'
+        />
+        <meta httpEquiv='Pragma' content='no-cache' />
+        <meta httpEquiv='Expires' content='0' />
       </head>
       <body>
-        <div className="site-wrapper">
-          <header className="site-header">
-            <Link href="/about" className="site-title">
+        <div className='site-wrapper'>
+          <header className='site-header'>
+            <Link href='/about' className='site-title'>
               Raj Gupta
             </Link>
-            <GlobalNavigation />
+            <NavigationMenu portfolioNavItems={navItems} />
           </header>
-          <main className="site-main">{children}</main>
+          <main className='site-main'>{children}</main>
         </div>
       </body>
     </html>
@@ -145,49 +200,49 @@ export default async function RootLayout({ children }) {
 function getFontFamily(fontValue) {
   switch (fontValue) {
     // Current font
-    case "eb-garamond":
+    case 'eb-garamond':
       return "'EB Garamond', serif";
-      
+
     // Serif fonts
-    case "playfair-display":
+    case 'playfair-display':
       return "'Playfair Display', serif";
-    case "merriweather":
+    case 'merriweather':
       return "'Merriweather', serif";
-    case "libre-baskerville":
+    case 'libre-baskerville':
       return "'Libre Baskerville', serif";
-    case "lora":
+    case 'lora':
       return "'Lora', serif";
-    case "cormorant-garamond":
+    case 'cormorant-garamond':
       return "'Cormorant Garamond', serif";
-      
+
     // Sans-serif fonts
-    case "open-sans":
+    case 'open-sans':
       return "'Open Sans', sans-serif";
-    case "roboto":
+    case 'roboto':
       return "'Roboto', sans-serif";
-    case "lato":
+    case 'lato':
       return "'Lato', sans-serif";
-    case "montserrat":
+    case 'montserrat':
       return "'Montserrat', sans-serif";
-    case "raleway":
+    case 'raleway':
       return "'Raleway', sans-serif";
-    case "work-sans":
+    case 'work-sans':
       return "'Work Sans', sans-serif";
-    case "poppins":
+    case 'poppins':
       return "'Poppins', sans-serif";
-      
+
     // Display/artistic fonts
-    case "cormorant":
+    case 'cormorant':
       return "'Cormorant', serif";
-    case "cinzel":
+    case 'cinzel':
       return "'Cinzel', serif";
-    case "josefin-sans":
+    case 'josefin-sans':
       return "'Josefin Sans', sans-serif";
-    case "josefin-slab":
+    case 'josefin-slab':
       return "'Josefin Slab', serif";
-    case "quicksand":
+    case 'quicksand':
       return "'Quicksand', sans-serif";
-      
+
     // Default fallback
     default:
       return "'EB Garamond', serif";

@@ -3,51 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@sanity/client';
-import styles from './NavigationButton.module.css';
+import styles from './NavigationMenu.module.css';
 
-// Initialize the client
-const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  apiVersion: '2023-03-01',
-  useCdn: true,
-});
-
-// Build portfolio tree from flat data
-function buildPortfolioTree(portfolios) {
-  const portfolioMap = {};
-  const rootPortfolios = [];
-
-  // First pass: map all portfolios by ID
-  portfolios.forEach((portfolio) => {
-    portfolioMap[portfolio._id] = {
-      ...portfolio,
-      subPortfolios: [],
-    };
-  });
-
-  // Second pass: build the tree structure
-  portfolios.forEach((portfolio) => {
-    if (portfolio.parentId) {
-      // This is a child portfolio, add it to its parent
-      if (portfolioMap[portfolio.parentId]) {
-        portfolioMap[portfolio.parentId].subPortfolios.push(
-          portfolioMap[portfolio._id]
-        );
-      }
-    } else {
-      // This is a root portfolio
-      rootPortfolios.push(portfolioMap[portfolio._id]);
-    }
-  });
-
-  return rootPortfolios;
-}
-
-export default function NavigationButton({ portfolios }) {
+export default function NavigationMenu({ portfolioNavItems }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [setPortfolios] = useState([]);
   const [resetKey, setResetKey] = useState(0); // Add reset key for forcing re-render
   const navRef = useRef(null);
   const pathname = usePathname();
@@ -96,31 +55,6 @@ export default function NavigationButton({ portfolios }) {
       openNav();
     }
   };
-
-  // Fetch portfolios
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch all portfolios
-        const allPortfolios = await client.fetch(`
-          *[_type == "portfolio"] {
-            _id,
-            title,
-            slug,
-            "parentId": parentPortfolio._ref
-          }
-        `);
-
-        // Build the recursive tree structure
-        const portfolioTree = buildPortfolioTree(allPortfolios);
-        setPortfolios(portfolioTree);
-      } catch (error) {
-        console.error('Error fetching portfolios:', error);
-      }
-    }
-
-    fetchData();
-  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -183,7 +117,7 @@ export default function NavigationButton({ portfolios }) {
           <div className={styles.navigationContent}>
             <RecursiveNavMenu
               key={resetKey} // Add key prop to force re-render
-              portfolios={portfolios}
+              portfolios={portfolioNavItems}
               closeNav={closeNav}
             />
           </div>

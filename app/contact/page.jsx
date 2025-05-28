@@ -1,7 +1,7 @@
 "use client"
 // app/contact/page.js
 import { FormspreeProvider } from '@formspree/react';
-import ContactForm from '@/app/components/ContactForm';
+import ContactForm from '@/components/ContactForm';
 import styles from './contact.module.css';
 
 export default function Contact() {
