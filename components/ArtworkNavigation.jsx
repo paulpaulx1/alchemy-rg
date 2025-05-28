@@ -46,7 +46,7 @@ export default function ArtworkNavigation({ prevUrl, nextUrl }) {
   }, [prevUrl, nextUrl, isNavigating]);
 
   // Handle touch events for swipe detection
-  useEffect(() => {
+  /*useEffect(() => {
     const handleTouchStart = (e) => {
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
@@ -95,7 +95,7 @@ export default function ArtworkNavigation({ prevUrl, nextUrl }) {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [prevUrl, nextUrl, isNavigating]);
+  }, [prevUrl, nextUrl, isNavigating]);*/
 
   // This component doesn't render anything visible
   return null;

@@ -4,6 +4,7 @@ import ResponsiveArtworkImage from '@/components/ResponsiveArtworkImage';
 import styles from './ArtworkPage.module.css';
 import PdfViewer from '@/components/PdfViewer';
 import ArtworkNavigation from '@/components/ArtworkNavigation';
+import AudioPlayer from '@/components/AudioPlayer';
 
 // Generate static params for all artwork pages
 export async function generateStaticParams() {
@@ -68,6 +69,8 @@ export default async function ArtworkPage({ params }) {
       externalVideoUrl,
       "pdfUrl": pdfFile.asset->url,
       "pdfThumbnailUrl": pdfThumbnail.asset->url,
+      "audioUrl": audioFile.asset->url,
+      "audioThumbnailUrl": audioThumbnail.asset->url,
       description,
       year,
       medium,
@@ -160,6 +163,20 @@ export default async function ArtworkPage({ params }) {
             <PdfViewer artwork={artwork} />
           </>
         );
+      case 'audio':
+        return (
+          <div className={styles.audioContainer}>
+            {artwork.audioUrl ? (
+              <AudioPlayer
+                src={artwork.audioUrl}
+                title={artwork.displayableTitle}
+              />
+            ) : (
+              <div className={styles.audioError}>Audio not available</div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }

@@ -18,21 +18,21 @@ export default function ArtworkGrid({ artworks }) {
 
   function renderArtworkThumbnail(artwork) {
     switch (artwork.mediaType) {
-      case "image":
+      case 'image':
         return (
           <img
             src={artwork.imageUrl}
-            alt={artwork.title || "Untitled artwork"}
+            alt={artwork.title || 'Untitled artwork'}
             className={styles.thumbnail}
           />
         );
-      case "video":
+      case 'video':
         return (
           <div className={styles.videoThumbnail}>
             {artwork.videoThumbnailUrl ? (
               <img
                 src={artwork.videoThumbnailUrl}
-                alt={artwork.title || "Untitled video"}
+                alt={artwork.title || 'Untitled video'}
                 className={styles.thumbnail}
               />
             ) : (
@@ -43,14 +43,14 @@ export default function ArtworkGrid({ artworks }) {
             <div className={styles.playButton}>▶</div>
           </div>
         );
-      case "pdf":
+      case 'pdf':
         return (
           <>
             {artwork.pdfThumbnailUrl ? (
               <div className={styles.pdfThumbnail}>
                 <img
                   src={artwork.pdfThumbnailUrl}
-                  alt={artwork.title || "Untitled PDF"}
+                  alt={artwork.title || 'Untitled PDF'}
                   className={styles.thumbnail}
                 />
               </div>
@@ -58,14 +58,31 @@ export default function ArtworkGrid({ artworks }) {
               <div className={styles.pdfDefaultThumbnail}>
                 <img
                   src={
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317"
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317'
                   }
-                  alt={artwork.title || "Untitled PDF"}
+                  alt={artwork.title || 'Untitled PDF'}
                   className={styles.defaultThumbnail}
                 />
               </div>
             )}
           </>
+        );
+      case 'audio':
+        return (
+          <div className={styles.audioThumbnail}>
+            {artwork.audioThumbnailUrl ? (
+              <img
+                src={artwork.audioThumbnailUrl}
+                alt={artwork.title || 'Untitled audio'}
+                className={styles.thumbnail}
+              />
+            ) : (
+              <div className={styles.audioPlaceholder}>
+                <span>Audio</span>
+              </div>
+            )}
+            <div className={styles.playButton}>♫</div>
+          </div>
         );
       default:
         return null;
