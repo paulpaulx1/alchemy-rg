@@ -1,14 +1,12 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { pdfjs, Document, Page } from 'react-pdf';
-
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
 ).toString();
-
 
 export default function PdfViewer(documentURL) {
   const [numPages, setNumPages] = useState(null);
@@ -28,6 +26,9 @@ export default function PdfViewer(documentURL) {
         )
       );
       setIsMobile(mobile);
+      if (mobile) {
+        setScale(0.5);
+      }
     };
 
     checkIfMobile();
@@ -46,7 +47,6 @@ export default function PdfViewer(documentURL) {
         : 'Failed to load PDF file.'
     );
   }
-
 
   function changePage(offSet) {
     setPageNumber((prevPageNumber) => {

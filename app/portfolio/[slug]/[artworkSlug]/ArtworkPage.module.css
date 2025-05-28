@@ -256,6 +256,7 @@
     
     .bottomSection {
       padding: 10px 5px; /* Even less padding on mobile */
+      margin-bottom: 50px;
     }
     
     .navigation {
@@ -435,6 +436,51 @@
   padding: 2rem;
   background: #f8f8f8;
 }
+
+/* Audio styles */
+.audioContainer {
+  width: 90vw;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #000000
+}
+
+.artworkAudio {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.audioError {
+  padding: 20px;
+  background-color: #f8f8f8;
+  color: #666;
+  text-align: center;
+  font-family: 'EB Garamond', serif;
+}
+
+.audioThumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audioPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #666;
+  font-family: 'EB Garamond', serif;
+}
+
 
 .downloadLink {
   color: #0066cc;
