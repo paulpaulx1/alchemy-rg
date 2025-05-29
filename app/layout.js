@@ -3,6 +3,8 @@ import Link from 'next/link';
 import './globals.css';
 import NavigationMenu from '../components/NavigationMenu';
 import { client } from '@/lib/client';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
 
 export const metadata = {
   title: 'Raj Gupta | Artist',
@@ -68,6 +70,8 @@ export async function getSiteSettings() {
 }
 
 export default async function RootLayout({ children }) {
+
+  <SpeedInsights />
   // Fetch site settings
   const settings = await getSiteSettings();
   // Server-side data fetching
