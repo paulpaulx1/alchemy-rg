@@ -33,7 +33,7 @@ export default async function Portfolio({ params }) {
       title,
       "slug": slug.current
     },
-    "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order desc) {
+    "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
       _id,
       title,
       displayTitle,
