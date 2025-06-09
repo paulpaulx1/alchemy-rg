@@ -19,10 +19,7 @@ export default async function AboutPage() {
       socialMedia,
       "cvUrl": cv.asset->url
     }
-  `);
-
-  console.log('artist in about', artist);
-  
+  `);  
 
   const portableTextComponents = {
     block: {

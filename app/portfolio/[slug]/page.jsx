@@ -73,26 +73,6 @@ export default async function Portfolio({ params }) {
 
   console.log('portfolio in portfolio page', portfolio);
 
-  const portableTextComponents = {
-    block: {
-      normal: ({ children }) => (
-        <p className={styles.bioParagraph}>{children}</p>
-      ),
-    },
-    list: {
-      bullet: ({ children }) => <ul className={styles.bioList}>{children}</ul>,
-      number: ({ children }) => <ol className={styles.bioList}>{children}</ol>,
-    },
-    listItem: {
-      bullet: ({ children }) => (
-        <li className={styles.bioListItem}>{children}</li>
-      ),
-      number: ({ children }) => (
-        <li className={styles.bioListItem}>{children}</li>
-      ),
-    },
-  };
-
   if (!portfolio) {
     return (
       <div className={styles.container}>
@@ -132,24 +112,14 @@ export default async function Portfolio({ params }) {
       {/* Centered portfolio title */}
       <h1 className={styles.heading}>{portfolio.title}</h1>
 
-      {/* Only show description if it's not just repeating the title */}
-      {/* {portfolio.description &&
-        !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
-          <p className={styles.description}>{portfolio.description}</p>
-        )} */}
+      {/* Rich text block or fallback description - only show one */}
       {portfolio.richTextBlock ? (
         <div className={styles.description}>
-          <PortableText
-            value={portfolio.richTextBlock}
-            components={portableTextComponents}
-          />
+          <PortableText value={portfolio.richTextBlock} />
         </div>
-      ) : (
-        !portfolio.richTextBlock && portfolio.description &&
-        !portfolio.description.includes(`Portfolio: ${portfolio.title}`) && (
-          <p className={styles.description}>{portfolio.description}</p>
-        )
-      )}
+      ) : portfolio.description && !portfolio.description.includes(`Portfolio: ${portfolio.title}`) ? (
+        <p className={styles.description}>{portfolio.description}</p>
+      ) : null}
 
       {/* Show sub-portfolios if they exist */}
       {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
