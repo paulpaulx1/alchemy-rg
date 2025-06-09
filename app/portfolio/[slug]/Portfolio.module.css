@@ -1,215 +1,187 @@
 /* app/portfolio/[slug]/Portfolio.module.css */
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    font-family: 'EB Garamond', serif;
-  }
-  
-  .breadcrumbs {
-    margin-bottom: 35px;
-    color: #555;
-    font-size: 15px;
-    letter-spacing: 0.3px;
-  }
-  
-  .breadcrumbLink {
-    color: #555;
-    text-decoration: none;
-  }
-  
-  .breadcrumbLink:hover {
-    text-decoration: underline;
-  }
-  
-  .breadcrumbSeparator {
-    margin: 0 8px;
-    color: #999;
-  }
-  
-  .breadcrumbCurrent {
-    color: #333;
-  }
-  
-  .heading {
-    font-size: 24px;
-    font-weight: normal;
-    font-style: italic;
-    margin-bottom: 30px;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-    letter-spacing: 0.5px;
-  }
-  
-  .description {
-    font-size: 16px;
-    line-height: 1.6;
-    color: #333;
-    margin-bottom: 40px;
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-    font-style: italic;
-  }
-  
-  .subHeading {
-    font-size: 20px;
-    font-weight: normal;
-    margin-bottom: 30px;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-    letter-spacing: 0.5px;
-  }
-  
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'EB Garamond', serif;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: normal;
+  font-style: italic;
+  margin-bottom: 30px;
+  text-align: center;
+  font-family: 'EB Garamond', serif;
+  letter-spacing: 0.5px;
+}
+
+.description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 40px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-style: italic;
+}
+
+.subHeading {
+  font-size: 20px;
+  font-weight: normal;
+  margin-bottom: 30px;
+  text-align: center;
+  font-family: 'EB Garamond', serif;
+  letter-spacing: 0.5px;
+}
+
+/* Updated portfolio grid styles - using flexbox */
+.portfolioGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  margin: 0 auto 60px auto;
+  max-width: 90%;
+}
+
+.portfolioCard {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease;
+}
+
+.portfolioCard:hover {
+  transform: translateY(-3px);
+}
+
+.portfolioImage {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.portfolioImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.portfolioCard:hover .portfolioImage img {
+  opacity: 0.9;
+}
+
+.portfolioTitle {
+  font-size: 18px;
+  font-weight: normal;
+  margin-bottom: 5px;
+  text-align: center;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+}
+
+.portfolioDescription {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.emptyMessage {
+  text-align: center;
+  margin-top: 60px;
+  color: #666;
+  font-family: 'EB Garamond', serif;
+  font-size: 18px;
+  font-style: italic;
+}
+
+.link {
+  color: #000;
+  text-decoration: underline;
+  font-size: 16px;
+}
+
+/* Enhanced breadcrumbs styling */
+.breadcrumbs {
+  margin-top: 25px;
+  margin-bottom: 35px;
+  color: #555;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.breadcrumbLink {
+  color: #333;
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: none;
+  border-bottom-color: #333;
+}
+
+.breadcrumbSeparator {
+  margin: 0 8px;
+  color: #999;
+}
+
+.breadcrumbCurrent {
+  color: #555;
+  padding: 4px 2px;
+}
+
+/* For larger screens, set a fixed number of columns */
+@media (min-width: 900px) {
   .portfolioGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 40px;
-    margin-bottom: 60px;
+    max-width: 1000px;
   }
   
   .portfolioCard {
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.3s ease;
+    flex: 0 0 calc(33.333% - 27px); /* Account for gap */
+    max-width: 320px;
+  }
+}
+
+/* For medium screens */
+@media (max-width: 900px) and (min-width: 600px) {
+  .portfolioGrid {
+    max-width: 700px;
   }
   
-  .portfolioCard:hover {
-    transform: translateY(-3px);
+  .portfolioCard {
+    flex: 0 0 calc(50% - 20px); /* 2 columns with gap */
+    max-width: 340px;
+  }
+}
+
+/* For smaller screens */
+@media (max-width: 600px) {
+  .portfolioGrid {
+    max-width: 350px;
+    gap: 30px;
+  }
+  
+  .portfolioCard {
+    flex: 0 0 100%; /* Single column */
   }
   
   .portfolioImage {
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
-    margin-bottom: 15px;
+    height: 160px;
   }
   
-  .portfolioImage img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity 0.3s ease;
+  .heading {
+    font-size: 22px;
   }
-  
-  .portfolioCard:hover .portfolioImage img {
-    opacity: 0.9;
-  }
-  
-  .portfolioTitle {
-    font-size: 18px;
-    font-weight: normal;
-    margin-bottom: 5px;
-    text-align: center;
-    font-family: 'EB Garamond', serif;
-    font-style: italic;
-  }
-  
-  .portfolioDescription {
-    font-size: 14px;
-    color: #666;
-    text-align: center;
-    line-height: 1.4;
-  }
-  
-  .emptyMessage {
-    text-align: center;
-    margin-top: 60px;
-    color: #666;
-    font-family: 'EB Garamond', serif;
-    font-size: 18px;
-    font-style: italic;
-  }
-  
-  .link {
-    color: #000;
-    text-decoration: underline;
-    font-size: 16px;
-  }
-  
-  @media (max-width: 768px) {
-    .portfolioGrid {
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 20px;
-    }
-    
-    .portfolioImage {
-      height: 160px;
-    }
-    
-    .heading {
-      font-size: 22px;
-    }
-  }
-
-  /* Updated portfolio grid styles */
-.portfolioGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 40px;
-    margin: 0 auto 60px auto;
-    max-width: 90%;
-    justify-content: center;
-  }
-  
-  /* For larger screens, set a fixed number of columns */
-  @media (min-width: 900px) {
-    .portfolioGrid {
-      grid-template-columns: repeat(3, 1fr);
-      max-width: 1000px;
-    }
-  }
-  
-  /* For medium screens */
-  @media (max-width: 900px) and (min-width: 600px) {
-    .portfolioGrid {
-      grid-template-columns: repeat(2, 1fr);
-      max-width: 700px;
-    }
-  }
-  
-  /* For smaller screens */
-  @media (max-width: 600px) {
-    .portfolioGrid {
-      grid-template-columns: 1fr;
-      max-width: 350px;
-      gap: 30px;
-    }
-  }
-
-  /* Enhanced breadcrumbs styling in Portfolio.module.css */
-.breadcrumbs {
-    margin-top: 25px; /* Increased top margin to prevent overlap */
-    margin-bottom: 35px;
-    color: #555;
-    font-size: 16px;
-    letter-spacing: 0.3px;
-    padding: 10px 0;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  
-  .breadcrumbLink {
-    color: #333;
-    text-decoration: none;
-    padding: 4px 2px;
-    border-bottom: 1px solid transparent; /* Add transparent border for hover effect */
-    transition: border-color 0.2s ease;
-  }
-  
-  .breadcrumbLink:hover {
-    text-decoration: none; /* Remove underline */
-    border-bottom-color: #333; /* Show border on hover instead */
-  }
-  
-  .breadcrumbSeparator {
-    margin: 0 8px;
-    color: #999;
-  }
-  
-  .breadcrumbCurrent {
-    color: #555;
-    padding: 4px 2px;
-  }
+}
