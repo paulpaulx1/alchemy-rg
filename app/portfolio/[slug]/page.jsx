@@ -109,8 +109,10 @@ export default async function Portfolio({ params }) {
         <span className={styles.breadcrumbCurrent}>{portfolio.title}</span>
       </div>
 
-      {/* Centered portfolio title */}
-      <h1 className={styles.heading}>{portfolio.title}</h1>
+      {/* Centered portfolio title - only show if no rich text */}
+      {!portfolio.richTextBlock && (
+        <h1 className={styles.heading}>{portfolio.title}</h1>
+      )}
 
       {/* Rich text block or fallback description - only show one */}
       {portfolio.richTextBlock ? (
