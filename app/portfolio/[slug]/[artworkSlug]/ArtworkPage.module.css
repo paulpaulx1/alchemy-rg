@@ -18,7 +18,6 @@
     font-size: 0.9rem;
     font-family: 'EB Garamond', serif;
     z-index: 50; /* Below header but above content */
-    width: 100%;
   }
   
   .breadcrumbLink {
