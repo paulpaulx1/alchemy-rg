@@ -1,58 +1,59 @@
 import { client } from '@/lib/client';
 import FeaturedPortfolio from '../components/FeaturedPortfolio';
 
-// Disable Next.js caching for this page
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Use ISR for better caching
+export const revalidate = 1800; // 30 minutes
 
-// This becomes a server component that fetches data server-side
 export default async function Home() {
   try {
-    // Fetch only the featured portfolio with minimal data
+    // Get the first artwork immediately for instant display
     const featuredPortfolio = await client.fetch(`
       *[_type == "portfolio" && featured == true][0] {
         _id,
         title,
-        "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
+        "firstArtwork": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) [0] {
           _id,
           title,
           image {
             asset-> {
-              url
+              url,
+              "fastUrl": url + "?w=800&h=600&fit=max&auto=format&q=75"
             }
           }
         }
       }
     `);
 
-    // Filter out artworks with missing image data
-    const validArtworks =
-      featuredPortfolio?.artworks?.filter(
-        (artwork) => artwork?.image?.asset?.url
-      ) || [];
+    if (!featuredPortfolio?.firstArtwork?.image?.asset) {
+      return (
+        <div className='flex items-center justify-center h-screen'>
+          <p>No featured artwork available.</p>
+        </div>
+      );
+    }
 
+    // Pass the portfolio ID to the component so it can fetch the rest
     return (
       <div>
-        {validArtworks.length > 0 ? (
-          <FeaturedPortfolio artworks={validArtworks} />
-        ) : (
-          <div className='flex items-center justify-center h-screen'>
-            <p>No featured artwork available.</p>
-          </div>
-        )}
+        <FeaturedPortfolio 
+          portfolioId={featuredPortfolio._id}
+          firstArtwork={{
+            ...featuredPortfolio.firstArtwork,
+            image: {
+              asset: {
+                url: featuredPortfolio.firstArtwork.image.asset.fastUrl || featuredPortfolio.firstArtwork.image.asset.url
+              }
+            }
+          }}
+        />
       </div>
     );
   } catch (error) {
-    console.error('Error fetching data:', error);
-
-    // Fallback UI in case of errors
+    console.error('Error fetching initial data:', error);
     return (
       <main>
         <div className='flex items-center justify-center h-screen'>
-          <p>
-            Sorry, there was an error loading the portfolio. Please try again
-            later.
-          </p>
+          <p>Sorry, there was an error loading the portfolio.</p>
         </div>
       </main>
     );
