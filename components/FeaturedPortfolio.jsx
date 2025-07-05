@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./FeaturedPortfolio.module.css";
 
 export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
-  // State for all artworks
+  // State for all artworks - start with just the first one
   const [allArtworks, setAllArtworks] = useState([firstArtwork]);
-  const [isLoadingMore, setIsLoadingMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasLoadedAll, setHasLoadedAll] = useState(false);
   
-  // Slideshow state - exact same as original
+  // Slideshow state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [activeContainer, setActiveContainer] = useState('A');
@@ -20,10 +21,15 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
   // Refs for timeouts
   const timeoutsRef = useRef([]);
   
-  // Fetch remaining artworks in background
+  // Fetch remaining artworks in background - only when needed
   useEffect(() => {
     const fetchRemainingArtworks = async () => {
+      if (hasLoadedAll || isLoadingMore) return;
+      
+      setIsLoadingMore(true);
+      
       try {
+        // Your existing API already skips the first image with [1...20]
         const response = await fetch(`/api/artworks/${portfolioId}`);
         const remainingData = await response.json();
         
@@ -41,6 +47,8 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
           
           setAllArtworks(prev => [...prev, ...validRemaining]);
         }
+        
+        setHasLoadedAll(true);
       } catch (error) {
         console.error('Error fetching remaining artworks:', error);
       } finally {
@@ -48,10 +56,14 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       }
     };
     
-    if (portfolioId) {
-      fetchRemainingArtworks();
+    // Start the slideshow immediately with first image, then fetch more in background
+    if (portfolioId && !hasLoadedAll) {
+      // Small delay to let the first image start showing
+      setTimeout(() => {
+        fetchRemainingArtworks();
+      }, 1000);
     }
-  }, [portfolioId]);
+  }, [portfolioId, hasLoadedAll, isLoadingMore]);
   
   // Filter valid artworks
   const validArtworks = allArtworks.filter(
@@ -71,46 +83,75 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     timeoutsRef.current = [];
   };
   
-  // Set image to container - exact same logic as original
+  // Set image to container - improved error handling
   const setImageToContainer = (containerType, url, forceRecalculate = false) => {
     return new Promise((resolve) => {
-      const tempImg = new Image();
-      tempImg.onload = () => {
-        // Calculate size - exact same as original
-        const maxHeight = window.innerHeight * 0.8;
-        const maxWidth = window.innerWidth * 0.9;
-        
-        let width = tempImg.width;
-        let height = tempImg.height;
-        
-        if (width > maxWidth) {
-          const ratio = maxWidth / width;
-          width = maxWidth;
-          height = height * ratio;
-        }
-        
-        if (height > maxHeight) {
-          const ratio = maxHeight / height;
-          height = maxHeight;
-          width = width * ratio;
-        }
-        
-        // Update the appropriate container state
-        const imageState = {
-          width: `${width}px`,
-          height: `${height}px`,
-          src: url,
-          opacity: forceRecalculate ? (containerType === activeContainer ? '1' : '0') : '0',
-          filter: forceRecalculate ? (containerType === activeContainer ? 'blur(0px)' : 'blur(10px)') : 'blur(10px)'
-        };
-        
-        if (containerType === 'A') {
-          setImageA(imageState);
-        } else {
-          setImageB(imageState);
-        }
-        
+      // Don't try to load if URL is invalid
+      if (!url || typeof url !== 'string') {
         resolve();
+        return;
+      }
+      
+      const tempImg = new Image();
+      
+      tempImg.onload = () => {
+        try {
+          // Calculate size with better bounds checking
+          const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
+          
+          // Safety checks
+          if (!viewportHeight || !viewportWidth || !tempImg.width || !tempImg.height) {
+            resolve();
+            return;
+          }
+          
+          const maxHeight = viewportHeight * 0.8;
+          const maxWidth = viewportWidth * 0.9;
+          
+          let width = tempImg.width;
+          let height = tempImg.height;
+          
+          // Calculate aspect ratio once
+          const aspectRatio = width / height;
+          
+          // Resize logic with better precision
+          if (width > maxWidth) {
+            width = maxWidth;
+            height = width / aspectRatio;
+          }
+          
+          if (height > maxHeight) {
+            height = maxHeight;
+            width = height * aspectRatio;
+          }
+          
+          // Ensure we have valid dimensions
+          if (width <= 0 || height <= 0 || !isFinite(width) || !isFinite(height)) {
+            resolve();
+            return;
+          }
+          
+          // Update the appropriate container state
+          const imageState = {
+            width: `${Math.round(width)}px`,
+            height: `${Math.round(height)}px`,
+            src: url,
+            opacity: forceRecalculate ? (containerType === activeContainer ? '1' : '0') : '0',
+            filter: forceRecalculate ? (containerType === activeContainer ? 'blur(0px)' : 'blur(10px)') : 'blur(10px)'
+          };
+          
+          if (containerType === 'A') {
+            setImageA(imageState);
+          } else {
+            setImageB(imageState);
+          }
+          
+          resolve();
+        } catch (error) {
+          console.error("Error calculating image dimensions:", error);
+          resolve();
+        }
       };
       
       tempImg.onerror = () => {
@@ -118,37 +159,63 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
         resolve();
       };
       
+      // Add timeout for loading
+      const loadTimeout = setTimeout(() => {
+        console.warn("Image load timeout:", url);
+        resolve();
+      }, 5000);
+      
+      tempImg.onload = (originalOnLoad => {
+        return function(...args) {
+          clearTimeout(loadTimeout);
+          originalOnLoad.apply(this, args);
+        };
+      })(tempImg.onload);
+      
+      tempImg.onerror = (originalOnError => {
+        return function(...args) {
+          clearTimeout(loadTimeout);
+          originalOnError.apply(this, args);
+        };
+      })(tempImg.onerror);
+      
       tempImg.src = url;
     });
   };
   
-  // Handle window resize - recalculate image dimensions
+  // Handle window resize - improved stability
   useEffect(() => {
-    const handleResize = () => {
-      // Recalculate dimensions for currently visible images
-      if (imageA.src && validArtworks.length > 0) {
-        setImageToContainer('A', imageA.src, true);
-      }
-      if (imageB.src && validArtworks.length > 0) {
-        setImageToContainer('B', imageB.src, true);
-      }
-    };
-    
-    // Debounce resize events
     let resizeTimeout;
-    const debouncedResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(handleResize, 150);
+    
+    const handleResize = () => {
+      // Clear any existing timeout
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      
+      // Debounce the resize handling
+      resizeTimeout = setTimeout(() => {
+        // Only recalculate if we have valid images and they're loaded
+        if (imageA.src && imageA.width !== 'auto') {
+          setImageToContainer('A', imageA.src, true);
+        }
+        if (imageB.src && imageB.width !== 'auto') {
+          setImageToContainer('B', imageB.src, true);
+        }
+      }, 200); // Increased debounce time
     };
     
-    window.addEventListener('resize', debouncedResize);
+    window.addEventListener('resize', handleResize, { passive: true });
+    
     return () => {
-      window.removeEventListener('resize', debouncedResize);
-      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
     };
-  }, [imageA.src, imageB.src, activeContainer, validArtworks.length]);
+  }, []); // Remove dependencies to avoid re-adding listeners
   
-  // Start slideshow - simplified logic
+  // Start slideshow
   const startSlideshow = async () => {
     if (isRunning) return;
     setIsRunning(true);
@@ -194,9 +261,8 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
           setImageB(prev => ({ ...prev, opacity: '0', filter: 'blur(10px)' }));
         }
         
-        // Start fading in the next image after a short delay (creates overlap)
+        // Start fading in the next image after a short delay
         addTimeout(() => {
-          // Fade in inactive container
           if (inactiveContainer === 'A') {
             setImageA(prev => ({ ...prev, opacity: '1', filter: 'blur(0px)' }));
           } else {
@@ -224,22 +290,19 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     }
   }, [validArtworks.length, currentIndex, isRunning]);
   
-  // Handle visibility change - restart on tab focus
+  // Handle visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Clear everything and restart fresh
         clearAllTimeouts();
         setIsRunning(false);
         
-        // Reset to clean state and restart
         setTimeout(() => {
           if (validArtworks.length > 0) {
             startSlideshow();
           }
         }, 100);
       } else {
-        // Pause by clearing timeouts
         clearAllTimeouts();
         setIsRunning(false);
       }
@@ -252,7 +315,7 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     };
   }, [validArtworks.length]);
   
-  // Handle window focus as backup
+  // Handle window focus
   useEffect(() => {
     const handleFocus = () => {
       if (!isRunning && validArtworks.length > 0) {
@@ -327,7 +390,7 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
         </div>
       </div>
       
-      {/* Loading Indicator */}
+      {/* Loading Indicator - only show when actively loading */}
       {isLoadingMore && (
         <div
           style={{

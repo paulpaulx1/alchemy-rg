@@ -5,7 +5,6 @@ import NavigationMenu from '../components/NavigationMenu';
 import { client } from '@/lib/client';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-
 export const metadata = {
   title: 'Raj Gupta | Artist',
   description: 'The artistic works of Raj Gupta',
@@ -41,12 +40,12 @@ function buildPortfolioTree(portfolios) {
   return rootPortfolios;
 }
 
-// Disable Next.js caching for this function
+// Cache the site settings and navigation for better performance
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60; // Cache for 60 seconds instead of 0
 
 export async function getSiteSettings() {
-  // First try to get the active settings
+  // First try to get the active settings - but only fetch what we need
   const activeSettings = await client.fetch(`
     *[_type == "siteSettings" && isActive == true][0] {
       backgroundColor,
@@ -69,21 +68,28 @@ export async function getSiteSettings() {
   return activeSettings;
 }
 
-export default async function RootLayout({ children }) {
+// Separate function to get navigation data with caching
+async function getNavigationData() {
+  // Only fetch essential navigation data
+  const portfolios = await client.fetch(`
+    *[_type == "portfolio"] | order(order asc) {
+      _id,
+      title,
+      slug,
+      order,
+      "parentId": parentPortfolio._ref
+    }
+  `);
 
-  <SpeedInsights />
-  // Fetch site settings
-  const settings = await getSiteSettings();
-  // Server-side data fetching
-  const allPortfolios = await client.fetch(`
-      *[_type == "portfolio"] {
-        _id,
-        title,
-        slug,
-        order,
-        "parentId": parentPortfolio._ref
-      }
-    `);
+  return portfolios;
+}
+
+export default async function RootLayout({ children }) {
+  // Fetch site settings and navigation data in parallel
+  const [settings, allPortfolios] = await Promise.all([
+    getSiteSettings(),
+    getNavigationData()
+  ]);
 
   // Add an "About" item at the top level
   const aboutItem = {
@@ -100,7 +106,7 @@ export default async function RootLayout({ children }) {
   // Add the About item at the beginning of the array
   const navItems = [aboutItem, ...portfolioTree];
 
-  // Create style tag content
+  // Create style tag content - removed cache busting
   const createStyleTagContent = () => {
     let styles = '';
 
@@ -146,9 +152,6 @@ export default async function RootLayout({ children }) {
     return styles;
   };
 
-  // Add a simple cache buster to the style tag
-  const cacheBuster = Date.now();
-
   return (
     <html lang='en'>
       <head>
@@ -163,24 +166,17 @@ export default async function RootLayout({ children }) {
           />
         )}
 
-        {/* Add the dynamic styles with a cache buster */}
+        {/* Add the dynamic styles - removed cache buster */}
         {settings && (
           <style
             dangerouslySetInnerHTML={{
-              __html:
-                createStyleTagContent() +
-                `\n/* Cache buster: ${cacheBuster} */`,
+              __html: createStyleTagContent()
             }}
           />
         )}
 
-        {/* Meta tags to prevent browser caching */}
-        <meta
-          httpEquiv='Cache-Control'
-          content='no-cache, no-store, must-revalidate'
-        />
-        <meta httpEquiv='Pragma' content='no-cache' />
-        <meta httpEquiv='Expires' content='0' />
+        {/* Removed aggressive cache prevention - allow normal browser caching */}
+        <meta httpEquiv='Cache-Control' content='public, max-age=300' />
       </head>
       <body>
         <div className='site-wrapper'>
@@ -192,6 +188,7 @@ export default async function RootLayout({ children }) {
           </header>
           <main className='site-main'>{children}</main>
         </div>
+        <SpeedInsights />
       </body>
     </html>
   );
