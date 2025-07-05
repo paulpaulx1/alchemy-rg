@@ -17,7 +17,7 @@ export default async function Home() {
           image {
             asset-> {
               url,
-              "fastUrl": url + "?w=800&h=600&fit=max&auto=format&q=75"
+              "optimizedUrl": url + "?w=1200&h=800&fit=max&auto=format&q=75"
             }
           }
         }
@@ -41,7 +41,7 @@ export default async function Home() {
             ...featuredPortfolio.firstArtwork,
             image: {
               asset: {
-                url: featuredPortfolio.firstArtwork.image.asset.fastUrl || featuredPortfolio.firstArtwork.image.asset.url
+                url: featuredPortfolio.firstArtwork.image.asset.optimizedUrl || featuredPortfolio.firstArtwork.image.asset.url
               }
             }
           }}

@@ -245,3 +245,110 @@
     font-size: 22px;
   }
 }
+
+/* Add these skeleton styles to your Portfolio.module.css */
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Base skeleton styling */
+.skeletonBase {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Breadcrumb skeleton */
+.skeletonBreadcrumb {
+  composes: skeletonBase;
+  height: 16px;
+  width: 80px;
+  display: inline-block;
+}
+
+/* Header section skeletons */
+.headerSkeleton {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.skeletonTitle {
+  composes: skeletonBase;
+  height: 32px;
+  width: 300px;
+  margin: 0 auto 20px auto;
+}
+
+.skeletonDescription {
+  composes: skeletonBase;
+  height: 16px;
+  width: 80%;
+  margin: 0 auto 12px auto;
+}
+
+/* Sub-portfolio grid skeletons */
+.skeletonPortfolioImage {
+  composes: skeletonBase;
+  width: 100%;
+  aspect-ratio: 3/2;
+  margin-bottom: 15px;
+  border-radius: 8px;
+}
+
+.skeletonPortfolioTitle {
+  composes: skeletonBase;
+  height: 20px;
+  width: 80%;
+  margin: 0 auto 10px auto;
+}
+
+.skeletonPortfolioDesc {
+  composes: skeletonBase;
+  height: 14px;
+  width: 90%;
+  margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeletonTitle {
+    width: 250px;
+    height: 28px;
+  }
+  
+  .skeletonDescription {
+    width: 90%;
+  }
+  
+  .skeletonPortfolioImage {
+    aspect-ratio: 4/3;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeletonTitle {
+    width: 200px;
+    height: 24px;
+  }
+  
+  .skeletonDescription {
+    width: 95%;
+    height: 14px;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBase {
+    animation: none;
+    background: #f0f0f0;
+  }
+}

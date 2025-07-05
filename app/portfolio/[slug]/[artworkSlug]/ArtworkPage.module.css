@@ -519,3 +519,114 @@
     color: #99ccff;
   }
 }
+
+/* Add these skeleton styles to your ArtworkPage.module.css */
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Base skeleton styling */
+.skeletonBase {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Breadcrumb skeletons */
+.skeletonBreadcrumb {
+  composes: skeletonBase;
+  height: 16px;
+  width: 80px;
+  display: inline-block;
+}
+
+/* Main artwork skeleton */
+.skeletonArtwork {
+  composes: skeletonBase;
+  width: 100%;
+  height: 60vh;
+  min-height: 400px;
+}
+
+/* Navigation button skeletons */
+.skeletonNavButton {
+  composes: skeletonBase;
+  height: 36px;
+  width: 80px;
+}
+
+/* Title and info skeletons */
+.skeletonTitle {
+  composes: skeletonBase;
+  height: 24px;
+  width: 200px;
+  margin: 0 auto 12px auto;
+}
+
+.skeletonDetails {
+  composes: skeletonBase;
+  height: 16px;
+  width: 150px;
+  margin: 0 auto 8px auto;
+}
+
+/* Media-specific skeletons */
+.skeletonImage {
+  composes: skeletonBase;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+.skeletonVideo {
+  composes: skeletonBase;
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+}
+
+.skeletonPdf {
+  composes: skeletonBase;
+  width: 100%;
+  height: 600px;
+  border-radius: 8px;
+}
+
+.skeletonAudio {
+  composes: skeletonBase;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBase {
+    animation: none;
+    background: #f0f0f0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeletonArtwork {
+    height: 50vh;
+    min-height: 300px;
+  }
+  
+  .skeletonVideo {
+    height: 250px;
+  }
+  
+  .skeletonPdf {
+    height: 400px;
+  }
+}

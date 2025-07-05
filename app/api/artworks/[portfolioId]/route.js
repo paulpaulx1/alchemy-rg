@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
           image {
             asset-> {
               url,
-              "optimizedUrl": url + "?w=1200&h=800&fit=max&auto=format&q=85"
+              "optimizedUrl": url + "?w=1200&h=800&fit=max&auto=format&q=75"
             }
           }
         }

@@ -40,7 +40,9 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
             ...artwork,
             image: {
               asset: {
-                url: artwork.image.asset.optimizedUrl || artwork.image.asset.url
+                // Use optimized URL with target ~150kb for slideshow
+                url: artwork.image.asset.optimizedUrl || 
+                     `${artwork.image.asset.url}?w=1200&h=800&fit=max&auto=format&q=75`
               }
             }
           }));
@@ -390,24 +392,7 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
         </div>
       </div>
       
-      {/* Loading Indicator - only show when actively loading */}
-      {isLoadingMore && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            background: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            zIndex: 1000
-          }}
-        >
-          Loading more images...
-        </div>
-      )}
+
     </div>
   );
 }
