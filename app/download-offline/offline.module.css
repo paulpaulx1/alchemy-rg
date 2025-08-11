@@ -1,0 +1,288 @@
+/* app/download-offline/offline.module.css */
+.container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 3rem 1rem;
+}
+
+.card {
+  max-width: 48rem;
+  margin: 0 auto;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.intro {
+  margin-bottom: 2rem;
+}
+
+.description {
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+
+/* Cached Portfolios */
+.cachedPortfolios {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cachedTitle {
+  font-weight: 600;
+  color: #14532d;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.cachedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cachedItem {
+  background: white;
+  border: 1px solid #d1fae5;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.cachedItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.cachedItemHeader strong {
+  color: #065f46;
+}
+
+.cachedDate {
+  font-size: 0.875rem;
+  color: #059669;
+}
+
+.cachedItemDetails {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #047857;
+}
+
+.cachedViewLink {
+  color: #059669;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.cachedViewLink:hover {
+  background-color: #d1fae5;
+}
+
+/* Portfolio Selection */
+.portfolioSelection {
+  margin-bottom: 2rem;
+}
+
+.selectLabel {
+  display: block;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.portfolioSelect {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+}
+
+.portfolioSelect:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.mediaCount {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Cache Status */
+.cacheStatus {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cacheTitle {
+  font-weight: 600;
+  color: #1e3a8a;
+  margin-bottom: 0.5rem;
+}
+
+.cacheInfo {
+  color: #1d4ed8;
+}
+
+/* Progress Section */
+.progressSection {
+  margin-bottom: 1.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.progressBar {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.5rem;
+  overflow: hidden;
+}
+
+.progressFill {
+  background-color: #2563eb;
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Success Message */
+.successMessage {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.successTitle {
+  font-weight: 600;
+  color: #14532d;
+  margin-bottom: 0.5rem;
+}
+
+.successText {
+  color: #15803d;
+}
+
+/* Button Group */
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.downloadButton {
+  flex: 1;
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 1rem;
+}
+
+.downloadButton:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.downloadButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.clearButton {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 1rem;
+}
+
+.clearButton:hover {
+  background-color: #f9fafb;
+}
+
+/* Instructions */
+.instructions {
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.instructionsTitle {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.instructionsList {
+  font-size: 0.875rem;
+  color: #4b5563;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.instructions-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .download-button,
+  .clear-button {
+    width: 100%;
+  }
+}
