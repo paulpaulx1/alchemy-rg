@@ -20,6 +20,15 @@ export async function GET(request) {
 
     console.log("Fetching media URLs for portfolio:", portfolioId);
 
+    // Detect if request is from mobile device
+    const userAgent = request.headers.get('user-agent') || '';
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    console.log("Is mobile device:", isMobile);
+
+    // Set video quality based on device
+    const videoQuality = isMobile ? "?fm=mp4&q=30&w=640&h=480" : "";
+    
     const query = `*[_type == "artwork" && portfolio._ref == $portfolioId] {
     _id,
     mediaType,
@@ -42,7 +51,7 @@ export async function GET(request) {
     "basePdfThumbnailUrl": pdfThumbnail.asset->url,
     
     // ADD RAW VIDEO/AUDIO FILE URLS for individual artwork pages
-    "rawVideoFileUrl": video.asset->url,
+    "rawVideoFileUrl": video.asset->url + "${videoQuality}",
     "rawAudioFileUrl": audioFile.asset->url
   }`;
 
