@@ -130,10 +130,49 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   } else {
-    // Handle other requests (pages, API, etc.)
+    // Handle other requests (pages, CSS, JS, API, etc.)
     event.respondWith(
       caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
+        if (response) {
+          console.log('🔧 Serving from cache:', event.request.url);
+          return response;
+        }
+        
+        // Not in cache, fetch from network
+        return fetch(event.request).then((networkResponse) => {
+          // Cache CSS, JS, and other static assets for offline use
+          if (event.request.url.includes('/_next/static/') || 
+              event.request.url.includes('.css') || 
+              event.request.url.includes('.js') ||
+              event.request.destination === 'style' ||
+              event.request.destination === 'script') {
+            
+            console.log('🔧 Caching static asset:', event.request.url);
+            
+            // Cache successful responses
+            if (networkResponse.status === 200) {
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(event.request, networkResponse.clone());
+              });
+            }
+          }
+          
+          return networkResponse;
+        }).catch(() => {
+          // If offline and not in cache, return a basic response for CSS/JS
+          if (event.request.url.includes('.css')) {
+            return new Response('/* Offline - CSS not available */', {
+              headers: { 'Content-Type': 'text/css' }
+            });
+          }
+          if (event.request.url.includes('.js')) {
+            return new Response('// Offline - JS not available', {
+              headers: { 'Content-Type': 'application/javascript' }
+            });
+          }
+          // For other requests, just fail
+          throw error;
+        });
       })
     );
   }
