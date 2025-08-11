@@ -39,7 +39,11 @@ export async function GET(request) {
     "baseLowResImageUrl": lowResImage.asset->url,
     "baseVideoThumbnailUrl": videoThumbnail.asset->url,
     "baseAudioThumbnailUrl": audioThumbnail.asset->url,
-    "basePdfThumbnailUrl": pdfThumbnail.asset->url
+    "basePdfThumbnailUrl": pdfThumbnail.asset->url,
+    
+    // ADD RAW VIDEO/AUDIO FILE URLS for individual artwork pages
+    "rawVideoFileUrl": video.asset->url,
+    "rawAudioFileUrl": audioFile.asset->url
   }`;
 
     const artworks = await client.fetch(query, { portfolioId });
@@ -65,6 +69,10 @@ export async function GET(request) {
         createProxyUrl(artwork.baseVideoThumbnailUrl),
         createProxyUrl(artwork.baseAudioThumbnailUrl),
         createProxyUrl(artwork.basePdfThumbnailUrl),
+        
+        // Raw file URLs (for individual artwork pages video/audio elements)
+        createProxyUrl(artwork.rawVideoFileUrl),
+        createProxyUrl(artwork.rawAudioFileUrl),
       ])
       .filter(Boolean); // Remove null values
 
