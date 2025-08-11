@@ -26,8 +26,10 @@ export async function GET(request) {
     
     console.log("Is mobile device:", isMobile);
 
-    // Set video quality based on device
-    const videoQuality = isMobile ? "?fm=mp4&q=30&w=640&h=480" : "";
+    // Set video quality based on device - compressed for both but more for mobile
+    const videoQuality = isMobile 
+      ? "?fm=mp4&q=30&w=640&h=480"    // Mobile: Very compressed
+      : "?fm=mp4&q=60&w=1280&h=720";  // Desktop: Moderately compressed
     
     const query = `*[_type == "artwork" && portfolio._ref == $portfolioId] {
     _id,
