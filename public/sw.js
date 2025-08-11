@@ -1,7 +1,7 @@
 // public/sw.js
 const CACHE_NAME = 'artist-site-v1';
 const MEDIA_CACHE = 'artist-media-v1';
-console.log('🔧 SERVICE WORKER v7 LOADED');
+console.log('🔧 SERVICE WORKER v8 LOADED');
 
 // Install event - cache essential files immediately
 self.addEventListener('install', (event) => {
@@ -52,7 +52,26 @@ self.addEventListener('fetch', (event) => {
   
   // Handle direct Sanity CDN requests by redirecting to our proxy cache
   if (url.hostname === 'cdn.sanity.io') {
-    const proxyUrl = `/api/asset-proxy?url=${encodeURIComponent(event.request.url)}`;
+    let originalUrl = event.request.url;
+    
+    // For video files, add compression parameters if they don't already exist
+    if ((originalUrl.includes('.mov') || originalUrl.includes('.mp4') || originalUrl.includes('.m4v')) 
+        && !originalUrl.includes('fm=mp4')) {
+      
+      // Detect if this is a mobile request (simplified check)
+      const userAgent = event.request.headers.get('user-agent') || '';
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      
+      // Add compression parameters
+      const compression = isMobile 
+        ? '?fm=mp4&q=30&w=640&h=480'    // Mobile: Very compressed
+        : '?fm=mp4&q=60&w=1280&h=720';  // Desktop: Moderately compressed
+      
+      originalUrl = originalUrl + compression;
+      console.log('🔧 Adding video compression:', event.request.url, '→', originalUrl);
+    }
+    
+    const proxyUrl = `/api/asset-proxy?url=${encodeURIComponent(originalUrl)}`;
     console.log('🔧 Redirecting Sanity URL to proxy:', event.request.url, '→', proxyUrl);
     
     event.respondWith(
@@ -70,28 +89,46 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Handle media files with range requests support
+  // Handle video/audio files with proper range request support
   if (event.request.destination === 'video' || 
       event.request.destination === 'audio' ||
       event.request.url.includes('.mp4') ||
       event.request.url.includes('.mp3') ||
-      event.request.url.includes('.wav')) {
+      event.request.url.includes('.wav') ||
+      event.request.url.includes('.mov') ||
+      event.request.url.includes('.m4v') ||
+      event.request.url.includes('.webm')) {
+    
+    console.log('🔧 Handling video/audio request:', event.request.url);
     
     event.respondWith(
-      caches.open(MEDIA_CACHE).then((cache) => {
-        return cache.match(event.request).then((response) => {
-          if (response) {
-            return response;
+      caches.open(MEDIA_CACHE).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        
+        if (cachedResponse) {
+          console.log('🔧 Serving video/audio from cache:', event.request.url);
+          
+          // Handle range requests for cached videos
+          const rangeHeader = event.request.headers.get('range');
+          if (rangeHeader) {
+            console.log('🔧 Range request detected:', rangeHeader);
+            return handleRangeRequest(cachedResponse, rangeHeader);
           }
-          return fetch(event.request).then((response) => {
-            if (response.status === 200) {
-              cache.put(event.request, response.clone());
-            }
-            return response;
-          });
+          
+          return cachedResponse;
+        }
+        
+        // Not in cache, fetch from network
+        console.log('🔧 Video/audio cache miss, fetching from network');
+        return fetch(event.request).then((response) => {
+          if (response.status === 200) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
         });
       })
     );
+    return;
   } else {
     // Handle other requests (pages, API, etc.)
     event.respondWith(
@@ -260,6 +297,39 @@ async function cacheMediaFiles(urls, portfolioSlug, portfolioData) {
         totalItems: totalItems,
         artworkPagesCached: artworkPages.length
       });
+    });
+  });
+}
+
+// Handle HTTP range requests for video/audio files
+function handleRangeRequest(cachedResponse, rangeHeader) {
+  return cachedResponse.arrayBuffer().then(buffer => {
+    const bytes = new Uint8Array(buffer);
+    const totalLength = bytes.length;
+    
+    // Parse range header (e.g., "bytes=0-1023" or "bytes=1024-")
+    const range = rangeHeader.replace('bytes=', '');
+    const [startStr, endStr] = range.split('-');
+    
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : totalLength - 1;
+    
+    console.log('🔧 Serving range:', start, '-', end, 'of', totalLength);
+    
+    // Extract the requested byte range
+    const slice = bytes.slice(start, end + 1);
+    
+    // Create response with proper headers
+    const headers = new Headers();
+    headers.set('Content-Range', `bytes ${start}-${end}/${totalLength}`);
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Content-Length', slice.length.toString());
+    headers.set('Content-Type', cachedResponse.headers.get('Content-Type') || 'video/mp4');
+    
+    return new Response(slice, {
+      status: 206, // Partial Content
+      statusText: 'Partial Content',
+      headers: headers
     });
   });
 }
