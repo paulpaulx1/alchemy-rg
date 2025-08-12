@@ -47,13 +47,7 @@ export default function YouTubeTest() {
         borderRadius: '8px',
         marginBottom: '2rem'
       }}>
-        <h3>What you'll see:</h3>
-        <ul>
-          <li>✅ <strong>YouTube logo</strong> in bottom right corner</li>
-          <li>✅ <strong>"Watch on YouTube"</strong> link when hovering</li>
-          <li>✅ <strong>Video title</strong> displayed on hover/pause</li>
-          <li>✅ <strong>YouTube controls</strong> and branding</li>
-        </ul>
+
       </div>
       
       <p style={{ 
