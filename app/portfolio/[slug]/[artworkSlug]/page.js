@@ -1,11 +1,12 @@
-import { client } from '@/lib/client';
-import Link from 'next/link';
-import ResponsiveArtworkImage from '@/components/ResponsiveArtworkImage';
-import styles from './ArtworkPage.module.css';
-import PdfViewer from '@/components/PdfViewer';
-import ArtworkNavigation from '@/components/ArtworkNavigation';
-import AudioPlayer from '@/components/AudioPlayer';
-import { Suspense } from 'react';
+import { client } from "@/lib/client";
+import Link from "next/link";
+import ResponsiveArtworkImage from "@/components/ResponsiveArtworkImage";
+import MuxVideo from "@/components/MuxVideo";
+import styles from "./ArtworkPage.module.css";
+import PdfViewer from "@/components/PdfViewer";
+import ArtworkNavigation from "@/components/ArtworkNavigation";
+import AudioPlayer from "@/components/AudioPlayer";
+import { Suspense } from "react";
 
 // Only generate static params for main portfolios to reduce build time
 export async function generateStaticParams() {
@@ -47,7 +48,7 @@ function getEmbedUrl(url) {
   return url;
 }
 
-// Optimized: combine both queries into one
+// Updated query with Mux fields
 async function getArtworkWithNavigation(artworkSlug) {
   return await client.fetch(
     `
@@ -63,6 +64,10 @@ async function getArtworkWithNavigation(artworkSlug) {
       "videoUrl": video.asset->url,
       "videoThumbnailUrl": videoThumbnail.asset->url,
       externalVideoUrl,
+      // Mux fields
+      muxPlaybackId,
+      muxAssetId,
+      muxStatus,
       "pdfUrl": pdfFile.asset->url,
       "pdfThumbnailUrl": pdfThumbnail.asset->url,
       "audioUrl": audioFile.asset->url,
@@ -145,7 +150,7 @@ export default async function ArtworkPage({ params }) {
     return (
       <div className={styles.container}>
         <h1>Artwork not found</h1>
-        <Link href='/'>Return to home</Link>
+        <Link href="/">Return to home</Link>
       </div>
     );
   }
@@ -165,33 +170,50 @@ export default async function ArtworkPage({ params }) {
 
   function renderArtworkDisplay(artwork) {
     switch (artwork.mediaType) {
-      case 'image':
+      case "image":
         return (
           <Suspense fallback={<div className={styles.skeletonImage}></div>}>
             <ResponsiveArtworkImage
               src={artwork.imageUrl}
-              alt={artwork.displayableTitle || 'Artwork'}
+              alt={artwork.displayableTitle || "Artwork"}
               title={artwork.displayableTitle}
               priority={true} // Load main artwork image with priority
             />
           </Suspense>
         );
-      case 'video':
+      case "video":
+        console.log("Full artwork object:", artwork);
+        console.log("muxPlaybackId specifically:", artwork.muxPlaybackId);
         return (
           <div className={styles.videoContainer}>
-            {artwork.videoUrl ? (
+            {/* Check for Mux video first */}
+            {artwork.muxPlaybackId ? (
+              <MuxVideo
+                playbackId={artwork.muxPlaybackId}
+                poster={artwork.videoThumbnailUrl}
+                title={artwork.displayableTitle || "Video artwork"}
+                className={styles.artworkVideo}
+                controls={true}
+                preload="metadata"
+                // Pass menuOpen state if you have it available
+                // menuOpen={menuOpen}
+              />
+            ) : artwork.videoUrl ? (
+              /* Fallback to regular video */
               <video
                 src={artwork.videoUrl}
                 controls
                 className={styles.artworkVideo}
-                preload="metadata" // Only load metadata initially
+                preload="metadata"
+                poster={artwork.videoThumbnailUrl}
               />
             ) : artwork.externalVideoUrl ? (
+              /* External video (YouTube/Vimeo) */
               <Suspense fallback={<div className={styles.skeletonVideo}></div>}>
                 <iframe
                   src={getEmbedUrl(artwork.externalVideoUrl)}
-                  title={artwork.displayableTitle || 'Video artwork'}
-                  allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+                  title={artwork.displayableTitle || "Video artwork"}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className={styles.artworkVideo}
                   loading="lazy"
@@ -202,13 +224,13 @@ export default async function ArtworkPage({ params }) {
             )}
           </div>
         );
-      case 'pdf':
+      case "pdf":
         return (
           <Suspense fallback={<div className={styles.skeletonPdf}></div>}>
             <PdfViewer artwork={artwork} />
           </Suspense>
         );
-      case 'audio':
+      case "audio":
         return (
           <div className={styles.audioContainer}>
             {artwork.audioUrl ? (
@@ -233,7 +255,7 @@ export default async function ArtworkPage({ params }) {
     <div className={styles.pageWrapper}>
       {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
-        <Link href='/' className={styles.breadcrumbLink}>
+        <Link href="/" className={styles.breadcrumbLink}>
           Home
         </Link>
         <span className={styles.breadcrumbSeparator}>/</span>
@@ -258,7 +280,7 @@ export default async function ArtworkPage({ params }) {
         </Link>
         <span className={styles.breadcrumbSeparator}>/</span>
         <span className={styles.breadcrumbCurrent}>
-          {artwork.displayableTitle || 'Artwork'}
+          {artwork.displayableTitle || "Artwork"}
         </span>
       </div>
 

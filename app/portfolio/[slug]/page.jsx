@@ -101,6 +101,10 @@ async function getPortfolioContent(portfolioId) {
         "videoThumbnailUrl": videoThumbnail.asset->url,
         "pdfThumbnailUrl": pdfThumbnail.asset->url,
         "audioThumbnailUrl": audioThumbnail.asset->url,
+        // Add Mux fields for videos
+        muxPlaybackId,
+        muxAssetId,
+        muxStatus,
         year
       },
       "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == $portfolioId] | order(order asc) {
@@ -120,6 +124,7 @@ async function getPortfolioContent(portfolioId) {
     { portfolioId }
   );
 }
+
 
 export default async function Portfolio({ params }) {
   const resolvedParams = await params;
