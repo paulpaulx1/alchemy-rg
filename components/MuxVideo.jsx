@@ -71,7 +71,8 @@ export default function MuxVideo({
       // Safari-specific adjustments
       if (isSafari) {
         containerWidth = containerWidth * 0.9;
-        console.log('Applied Safari-specific width reduction');
+        containerHeight = containerHeight * 0.85; // Reduce height by 15% for Safari
+        console.log('Applied Safari-specific width and height reduction');
       }
       
       // Ensure width never exceeds reasonable viewport limits
