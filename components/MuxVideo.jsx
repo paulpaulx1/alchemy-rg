@@ -1,4 +1,3 @@
-// components/MuxVideo.js
 'use client';
 
 import MuxPlayer from '@mux/mux-player-react';
@@ -14,7 +13,13 @@ export default function MuxVideo({
 }) {
   const [containerStyle, setContainerStyle] = useState({});
   const [aspectRatio, setAspectRatio] = useState(null);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  
   const containerRef = useRef(null);
+  const playerRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
+  const cleanupTimeoutRef = useRef(null);
 
   console.log('MuxVideo received playbackId:', playbackId);
 
@@ -26,6 +31,30 @@ export default function MuxVideo({
       </div>
     );
   }
+
+  // Cleanup function to prevent memory leaks
+  const cleanup = useCallback(() => {
+    console.log('Cleaning up video resources...');
+    
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+    
+    if (cleanupTimeoutRef.current) {
+      clearTimeout(cleanupTimeoutRef.current);
+      cleanupTimeoutRef.current = null;
+    }
+
+    // Reset player state
+    setError(null);
+    setRetryCount(0);
+  }, []);
+
+  // Cleanup on unmount and playbackId change
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup, playbackId]);
 
   // Set up CSS custom property for viewport height (Safari mobile fix)
   useEffect(() => {
@@ -143,12 +172,12 @@ export default function MuxVideo({
     if (!video.videoWidth || !video.videoHeight) {
       console.log('Safari being Safari - dimensions not ready yet, retrying...');
       
-      let retryCount = 0;
+      let retryAttempts = 0;
       const maxRetries = 10;
       
       const retryInterval = setInterval(() => {
-        retryCount++;
-        console.log(`Safari retry attempt ${retryCount}/${maxRetries}`);
+        retryAttempts++;
+        console.log(`Safari retry attempt ${retryAttempts}/${maxRetries}`);
         
         if (video.videoWidth && video.videoHeight) {
           console.log('Safari retry successful - got dimensions:', video.videoWidth, 'x', video.videoHeight);
@@ -165,7 +194,7 @@ export default function MuxVideo({
           return;
         } 
         
-        if (retryCount >= maxRetries) {
+        if (retryAttempts >= maxRetries) {
           console.log('Safari retry failed after', maxRetries, 'attempts - using fallback');
           clearInterval(retryInterval);
           
@@ -196,10 +225,71 @@ export default function MuxVideo({
   const handleCanPlay = (event) => {
     const video = event.target;
     
+    // Reset retry count on successful load
+    setRetryCount(0);
+    setError(null);
+    
     if ((!aspectRatio || isNaN(aspectRatio)) && video.videoWidth && video.videoHeight) {
       console.log('Got dimensions from canplay event (Safari fallback)');
       handleLoadedMetadata(event);
     }
+  };
+
+  // Handle errors and implement retry logic
+  const handleError = (event) => {
+    const errorDetails = event.detail || event.target?.error || 'Unknown error';
+    console.error('Video error occurred:', errorDetails);
+    
+    setError(errorDetails);
+    
+    // Retry logic for transient errors
+    if (retryCount < 3) {
+      console.log(`Attempting retry ${retryCount + 1}/3 in 2 seconds...`);
+      
+      retryTimeoutRef.current = setTimeout(() => {
+        console.log('Retrying video load...');
+        setRetryCount(prev => prev + 1);
+        setError(null);
+        
+        // Force reload the player
+        if (playerRef.current) {
+          try {
+            playerRef.current.load();
+          } catch (e) {
+            console.warn('Error calling load():', e);
+          }
+        }
+      }, 2000);
+    } else {
+      console.error('Max retries exceeded for video:', playbackId);
+      setError('Unable to load video after multiple attempts');
+    }
+  };
+
+  // Handle playback end (to prevent resource buildup)
+  const handleEnded = () => {
+    console.log('Video ended, scheduling cleanup...');
+    
+    // Clean up resources after video ends to prevent memory leaks
+    cleanupTimeoutRef.current = setTimeout(() => {
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.currentTime = 0;
+        } catch (e) {
+          console.warn('Error during cleanup:', e);
+        }
+      }
+    }, 1000);
+  };
+
+  // Handle stalled/waiting events (network issues)
+  const handleStalled = () => {
+    console.warn('Video playback stalled - network issues detected');
+  };
+
+  const handleWaiting = () => {
+    console.log('Video waiting for data...');
   };
 
   // Recalculate on window resize
@@ -226,6 +316,24 @@ export default function MuxVideo({
     return () => window.removeEventListener('resize', handleResize);
   }, [aspectRatio, calculateContainerDimensions]);
 
+  // Show error state if needed
+  if (error && retryCount >= 3) {
+    return (
+      <div className={`${styles.videoError} ${className}`}>
+        <p>Unable to load video</p>
+        <button 
+          onClick={() => {
+            setRetryCount(0);
+            setError(null);
+          }}
+          style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer' }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={containerRef}
@@ -233,6 +341,7 @@ export default function MuxVideo({
       style={containerStyle}
     >
       <MuxPlayer
+        ref={playerRef}
         playbackId={playbackId}
         poster={poster}
         title={title}
@@ -241,8 +350,26 @@ export default function MuxVideo({
         controls
         onLoadedMetadata={handleLoadedMetadata}
         onCanPlay={handleCanPlay}
+        onError={handleError}
+        onEnded={handleEnded}
+        onStalled={handleStalled}
+        onWaiting={handleWaiting}
         {...props}
       />
+
+      {/* Retry indicator */}
+      {error && retryCount < 3 && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#666',
+          fontSize: '14px'
+        }}>
+          Retrying... ({retryCount + 1}/3)
+        </div>
+      )}
     </div>
   );
 }
