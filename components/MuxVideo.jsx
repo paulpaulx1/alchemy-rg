@@ -52,14 +52,21 @@ export default function MuxVideo({
     const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
     const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
     
+    // Detect Safari mobile specifically
+    const isSafariMobile = isSafari && /iPhone|iPad|iPod/.test(navigator.userAgent);
+    
     let containerHeight, containerWidth;
     
     if (ratio < 0.8) {
       // Vertical video
       let maxHeight = viewportHeight * 0.85;
       
-      // Reduce height on wide screens (desktop/tablet landscape)
-      if (viewportWidth > 768) {
+      // Safari mobile gets even more aggressive height reduction
+      if (isSafariMobile) {
+        maxHeight = viewportHeight * 0.65; // Much more aggressive for Safari mobile
+        console.log('Safari mobile detected - using aggressive height reduction');
+      } else if (viewportWidth > 768) {
+        // Reduce height on wide screens (desktop/tablet landscape)
         const originalMaxHeight = maxHeight;
         maxHeight = Math.min(maxHeight, viewportHeight - 280);
         console.log(`Wide screen detected (${viewportWidth}px). Original maxHeight: ${originalMaxHeight}, reduced to: ${maxHeight}`);
@@ -69,10 +76,10 @@ export default function MuxVideo({
       containerWidth = containerHeight * ratio;
       
       // Safari-specific adjustments
-      if (isSafari) {
+      if (isSafari && !isSafariMobile) {
         containerWidth = containerWidth * 0.9;
-        containerHeight = containerHeight * 0.85; // Reduce height by 15% for Safari
-        console.log('Applied Safari-specific width and height reduction');
+        containerHeight = containerHeight * 0.85; // Reduce height by 15% for Safari desktop
+        console.log('Applied Safari desktop-specific width and height reduction');
       }
       
       // Ensure width never exceeds reasonable viewport limits
@@ -82,7 +89,7 @@ export default function MuxVideo({
         containerHeight = containerWidth / ratio;
       }
       
-      console.log(`Vertical video calculations - ratio: ${ratio}, containerHeight: ${containerHeight}, containerWidth: ${containerWidth}, maxAllowedWidth: ${maxAllowedWidth}, Safari: ${isSafari}`);
+      console.log(`Vertical video calculations - ratio: ${ratio}, containerHeight: ${containerHeight}, containerWidth: ${containerWidth}, maxAllowedWidth: ${maxAllowedWidth}, Safari: ${isSafari}, Safari Mobile: ${isSafariMobile}`);
       
       // Mobile-specific constraints
       if (viewportWidth <= 768) {
