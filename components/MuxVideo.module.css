@@ -50,3 +50,12 @@
   justify-content: center;
   border-radius: 8px;
 }
+
+/* Safari-specific fixes */
+.muxPlayerContainer {
+  -webkit-transform: translateZ(0); /* Force hardware acceleration */
+}
+
+.muxPlayerContainer mux-player {
+  -webkit-transform: translateZ(0);
+}
