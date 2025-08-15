@@ -1,4 +1,5 @@
 import { client } from "@/lib/client";
+import Link from "next/link";
 import ClientArtworkNavigator from "./ClientArtworkNavigator";
 
 // More conservative static generation
