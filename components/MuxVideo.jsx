@@ -59,7 +59,6 @@ export default function MuxVideo({
   // Set up CSS custom property for viewport height (Safari mobile fix)
   useEffect(() => {
     const setViewportHeight = () => {
-      // Use document.documentElement.clientHeight for more reliable mobile measurements
       const vh = document.documentElement.clientHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
@@ -77,11 +76,9 @@ export default function MuxVideo({
   // Calculate optimal container dimensions
   const calculateContainerDimensions = useCallback((videoWidth, videoHeight, isSafari = false) => {
     const ratio = videoWidth / videoHeight;
-    // Use document.documentElement.clientHeight for more reliable mobile measurements
     const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
     const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
     
-    // Detect Safari mobile specifically
     const isSafariMobile = isSafari && /iPhone|iPad|iPod/.test(navigator.userAgent);
     
     let containerHeight, containerWidth;
@@ -90,12 +87,10 @@ export default function MuxVideo({
       // Vertical video
       let maxHeight = viewportHeight * 0.85;
       
-      // Safari mobile gets even more aggressive height reduction
       if (isSafariMobile) {
-        maxHeight = viewportHeight * 0.65; // Much more aggressive for Safari mobile
+        maxHeight = viewportHeight * 0.65;
         console.log('Safari mobile detected - using aggressive height reduction');
       } else if (viewportWidth > 768) {
-        // Reduce height on wide screens (desktop/tablet landscape)
         const originalMaxHeight = maxHeight;
         maxHeight = Math.min(maxHeight, viewportHeight - 280);
         console.log(`Wide screen detected (${viewportWidth}px). Original maxHeight: ${originalMaxHeight}, reduced to: ${maxHeight}`);
@@ -104,14 +99,12 @@ export default function MuxVideo({
       containerHeight = Math.min(maxHeight, 800);
       containerWidth = containerHeight * ratio;
       
-      // Safari-specific adjustments
       if (isSafari && !isSafariMobile) {
         containerWidth = containerWidth * 0.9;
-        containerHeight = containerHeight * 0.85; // Reduce height by 15% for Safari desktop
+        containerHeight = containerHeight * 0.85;
         console.log('Applied Safari desktop-specific width and height reduction');
       }
       
-      // Ensure width never exceeds reasonable viewport limits
       const maxAllowedWidth = Math.min(viewportWidth * 0.9, 600);
       if (containerWidth > maxAllowedWidth) {
         containerWidth = maxAllowedWidth;
@@ -120,7 +113,6 @@ export default function MuxVideo({
       
       console.log(`Vertical video calculations - ratio: ${ratio}, containerHeight: ${containerHeight}, containerWidth: ${containerWidth}, maxAllowedWidth: ${maxAllowedWidth}, Safari: ${isSafari}, Safari Mobile: ${isSafariMobile}`);
       
-      // Mobile-specific constraints
       if (viewportWidth <= 768) {
         const maxMobileWidth = viewportWidth * 0.95;
         if (containerWidth > maxMobileWidth) {
@@ -134,7 +126,6 @@ export default function MuxVideo({
           containerWidth = containerHeight * ratio;
         }
       } else {
-        // Desktop: Ensure it doesn't get too wide on very tall screens
         if (containerWidth > viewportWidth * 0.6) {
           containerWidth = viewportWidth * 0.6;
           containerHeight = containerWidth / ratio;
@@ -168,7 +159,6 @@ export default function MuxVideo({
   const handleLoadedMetadata = (event) => {
     const video = event.target;
     
-    // Safari sometimes fires loadedmetadata before dimensions are available
     if (!video.videoWidth || !video.videoHeight) {
       console.log('Safari being Safari - dimensions not ready yet, retrying...');
       
@@ -215,17 +205,41 @@ export default function MuxVideo({
     
     console.log(`Video dimensions: ${video.videoWidth}x${video.videoHeight}, aspect ratio: ${ratio}`);
     
-    const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight, isSafari);
     setContainerStyle(newStyle);
     
     console.log('Applied container style:', newStyle);
   };
 
-  // Additional event handler for Safari's quirks
+  // Handle when user clicks play - this is when real dimensions become available
+  const handlePlay = (event) => {
+    const video = event.target;
+    console.log('Play started - checking for updated dimensions:', video.videoWidth, 'x', video.videoHeight);
+    
+    if (video.videoWidth && video.videoHeight) {
+      const ratio = video.videoWidth / video.videoHeight;
+      const currentRatio = aspectRatio;
+      
+      // Check if dimensions changed significantly from what we calculated before
+      if (!currentRatio || Math.abs(ratio - currentRatio) > 0.1) {
+        console.log('Dimensions changed on play - recalculating:', ratio, 'vs previous:', currentRatio);
+        
+        setAspectRatio(ratio);
+        
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight, isSafari);
+        setContainerStyle(newStyle);
+        
+        console.log('Applied updated container style on play:', newStyle);
+      }
+    }
+  };
+
+  // Handle canplay event for Safari's quirks
   const handleCanPlay = (event) => {
     const video = event.target;
     
-    // Reset retry count on successful load
     setRetryCount(0);
     setError(null);
     
@@ -242,7 +256,6 @@ export default function MuxVideo({
     
     setError(errorDetails);
     
-    // Retry logic for transient errors
     if (retryCount < 3) {
       console.log(`Attempting retry ${retryCount + 1}/3 in 2 seconds...`);
       
@@ -251,7 +264,6 @@ export default function MuxVideo({
         setRetryCount(prev => prev + 1);
         setError(null);
         
-        // Force reload the player
         if (playerRef.current) {
           try {
             playerRef.current.load();
@@ -266,11 +278,10 @@ export default function MuxVideo({
     }
   };
 
-  // Handle playback end (to prevent resource buildup)
+  // Handle playback end
   const handleEnded = () => {
     console.log('Video ended, scheduling cleanup...');
     
-    // Clean up resources after video ends to prevent memory leaks
     cleanupTimeoutRef.current = setTimeout(() => {
       if (playerRef.current) {
         try {
@@ -283,7 +294,7 @@ export default function MuxVideo({
     }, 1000);
   };
 
-  // Handle stalled/waiting events (network issues)
+  // Handle stalled/waiting events
   const handleStalled = () => {
     console.warn('Video playback stalled - network issues detected');
   };
@@ -304,11 +315,7 @@ export default function MuxVideo({
           const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight, isSafari);
           setContainerStyle(newStyle);
           console.log('Applied new container style on resize:', newStyle);
-        } else {
-          console.log('No video element found for resize calculation');
         }
-      } else {
-        console.log('No aspect ratio available for resize calculation');
       }
     };
 
@@ -346,10 +353,11 @@ export default function MuxVideo({
         poster={poster}
         title={title}
         streamType="on-demand"
-        preload="metadata"
+        preload="none"
         controls
         onLoadedMetadata={handleLoadedMetadata}
         onCanPlay={handleCanPlay}
+        onPlay={handlePlay}
         onError={handleError}
         onEnded={handleEnded}
         onStalled={handleStalled}
