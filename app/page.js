@@ -1,13 +1,20 @@
 import { client } from '@/lib/client';
 import FeaturedPortfolio from '../components/FeaturedPortfolio';
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 // Better metadata for performance and SEO
 export const metadata = {
   title: 'Portfolio - Featured Artworks',
   description: 'Explore featured artworks and portfolios',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
   robots: 'index, follow',
+};
+
+// Separate viewport export (Next.js 14+ requirement)
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 // Optimized ISR with better caching
@@ -65,12 +72,12 @@ export default async function Home() {
             <div className='text-center'>
               <h1 className='text-2xl font-bold mb-4'>No Featured Portfolio</h1>
               <p className='text-gray-600 mb-4'>Please set a portfolio as featured in your CMS.</p>
-              <a 
+              <Link 
                 href='/portfolio' 
                 className='text-blue-600 hover:text-blue-800 underline'
               >
                 Browse all portfolios
-              </a>
+              </Link>
             </div>
           </div>
         </main>
