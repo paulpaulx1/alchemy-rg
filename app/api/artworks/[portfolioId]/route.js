@@ -18,14 +18,12 @@ export async function GET(request, { params }) {
           "slug": slug.current,
           image {
             asset-> {
-              url,
-              "optimizedUrl": url + "?w=800&h=600&fit=crop&auto=format&q=80",
-              "lowResUrl": url + "?w=100&h=75&fit=crop&auto=format&q=60"
+              url
             }
           },
-          "videoThumbnailUrl": videoThumbnail.asset->url + "?w=800&h=600&fit=crop&auto=format&q=80",
-          "pdfThumbnailUrl": pdfThumbnail.asset->url + "?w=800&h=600&fit=crop&auto=format&q=80",
-          "audioThumbnailUrl": audioThumbnail.asset->url + "?w=800&h=600&fit=crop&auto=format&q=80",
+          "videoThumbnailUrl": videoThumbnail.asset->url,
+          "pdfThumbnailUrl": pdfThumbnail.asset->url,
+          "audioThumbnailUrl": audioThumbnail.asset->url,
           year
         }
       }

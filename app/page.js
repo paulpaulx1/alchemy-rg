@@ -34,7 +34,7 @@ function HomePage() {
 
 export default async function Home() {
   try {
-    // Get the first artwork with optimized image sizing
+    // Get the first artwork WITHOUT forced dimensions
     const featuredPortfolio = await client.fetch(`
       *[_type == "portfolio" && featured == true][0] {
         _id,
@@ -48,16 +48,14 @@ export default async function Home() {
           mediaType,
           image {
             asset-> {
-              url,
-              "optimizedUrl": url + "?w=1200&h=800&fit=max&auto=format&q=80",
-              "lowResUrl": url + "?w=100&h=67&fit=max&auto=format&q=60"
+              url
             }
           },
           // Include video thumbnail for video artworks
-          "videoThumbnailUrl": videoThumbnail.asset->url + "?w=1200&h=800&fit=max&auto=format&q=80",
+          "videoThumbnailUrl": videoThumbnail.asset->url,
           // Include other media thumbnails
-          "pdfThumbnailUrl": pdfThumbnail.asset->url + "?w=1200&h=800&fit=max&auto=format&q=80",
-          "audioThumbnailUrl": audioThumbnail.asset->url + "?w=1200&h=800&fit=max&auto=format&q=80"
+          "pdfThumbnailUrl": pdfThumbnail.asset->url,
+          "audioThumbnailUrl": audioThumbnail.asset->url
         },
         // Get a count of total artworks for better UX
         "artworkCount": count(*[_type == "artwork" && portfolio._ref == ^._id])
@@ -101,7 +99,7 @@ export default async function Home() {
     const getThumbnailUrl = (artwork) => {
       switch (artwork.mediaType) {
         case 'image':
-          return artwork.image?.asset?.optimizedUrl || artwork.image?.asset?.url;
+          return artwork.image?.asset?.url;
         case 'video':
           return artwork.videoThumbnailUrl;
         case 'pdf':
@@ -109,18 +107,11 @@ export default async function Home() {
         case 'audio':
           return artwork.audioThumbnailUrl;
         default:
-          return artwork.image?.asset?.optimizedUrl || artwork.image?.asset?.url;
+          return artwork.image?.asset?.url;
       }
     };
 
-    const getLowResThumbnail = (artwork) => {
-      // For now, use the image low res for all media types
-      // You could extend this to have low-res versions of other thumbnails
-      return artwork.image?.asset?.lowResUrl;
-    };
-
     const thumbnailUrl = getThumbnailUrl(featuredPortfolio.firstArtwork);
-    const lowResThumbnail = getLowResThumbnail(featuredPortfolio.firstArtwork);
 
     if (!thumbnailUrl) {
       return (
@@ -135,13 +126,12 @@ export default async function Home() {
       );
     }
 
-    // Prepare optimized artwork data
+    // Prepare artwork data with original URLs
     const optimizedArtwork = {
       ...featuredPortfolio.firstArtwork,
       image: {
         asset: {
-          url: thumbnailUrl,
-          lowResUrl: lowResThumbnail
+          url: thumbnailUrl
         }
       }
     };

@@ -1,4 +1,4 @@
-// components/ClientArtworkNavigator.jsx
+// Preload video// components/ClientArtworkNavigator.jsx
 'use client'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,18 @@ import AudioPlayer from "@/components/AudioPlayer"
 import ArtworkNavigation from "@/components/ArtworkNavigation"
 import { Suspense } from "react"
 import styles from "./ArtworkPage.module.css"
+import { getConnectionSpeed, getOptimizedImageUrl } from "@/utils/connectionUtils"
+
+// Helper function to safely get optimized URL
+function getSafeOptimizedUrl(url, connectionSpeed, mediaType = 'image') {
+  if (!url) return url
+  
+  // Remove existing query parameters to avoid conflicts
+  const cleanUrl = url.split('?')[0]
+  
+  // Use the connection utils to get optimized params
+  return getOptimizedImageUrl(cleanUrl, connectionSpeed, mediaType)
+}
 
 // Helper function to get embed URL from video links
 function getEmbedUrl(url) {
@@ -33,26 +45,32 @@ function getEmbedUrl(url) {
 export default function ClientArtworkNavigator({ portfolioData, initialArtworkSlug }) {
   const router = useRouter()
   const [currentArtworkSlug, setCurrentArtworkSlug] = useState(initialArtworkSlug)
-  const [preloadedAssets, setPreloadedAssets] = useState(() => new Map())
-  const [loadingAssets, setLoadingAssets] = useState(() => new Set())
+  const [preloadedAssets, setPreloadedAssets] = useState(new Map())
   const [isNavigating, setIsNavigating] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [connectionSpeed, setConnectionSpeed] = useState('fast') // Default to fast
+  const [connectionSpeed, setConnectionSpeed] = useState('moderate')
 
-  // Set mounted state after hydration and detect connection speed
+  // Set mounted state and detect connection speed
   useEffect(() => {
     setMounted(true)
     
-    // Detect connection speed
-    if (typeof navigator !== 'undefined' && 'connection' in navigator) {
+    // Get initial connection speed
+    const speed = getConnectionSpeed()
+    setConnectionSpeed(speed)
+    console.log('Initial connection speed:', speed)
+    
+    // Listen for connection changes
+    if ('connection' in navigator) {
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
       if (connection) {
-        const effectiveType = connection.effectiveType
-        if (effectiveType === 'slow-2g' || effectiveType === '2g' || effectiveType === '3g') {
-          setConnectionSpeed('slow')
-        } else {
-          setConnectionSpeed('fast')
+        const handleConnectionChange = () => {
+          const newSpeed = getConnectionSpeed()
+          console.log('Connection speed changed:', newSpeed)
+          setConnectionSpeed(newSpeed)
         }
+        
+        connection.addEventListener('change', handleConnectionChange)
+        return () => connection.removeEventListener('change', handleConnectionChange)
       }
     }
   }, [])
@@ -71,6 +89,124 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
     ? portfolioData.artworks[currentIndex + 1] 
     : portfolioData.artworks[0]
 
+  // More aggressive preloading - preload more artworks around current position
+  const getArtworksToPreload = useCallback(() => {
+    const toPreload = []
+    const totalArtworks = portfolioData.artworks.length
+    
+    // Preload 2 before and 2 after current artwork
+    for (let offset = -2; offset <= 2; offset++) {
+      if (offset === 0) continue // Skip current artwork
+      
+      let targetIndex = currentIndex + offset
+      if (targetIndex < 0) targetIndex = totalArtworks + targetIndex
+      if (targetIndex >= totalArtworks) targetIndex = targetIndex - totalArtworks
+      
+      const artwork = portfolioData.artworks[targetIndex]
+      if (artwork) toPreload.push(artwork)
+    }
+    
+    return toPreload
+  }, [currentIndex, portfolioData.artworks])
+
+  // Preload assets for adjacent artworks - connection-aware
+  useEffect(() => {
+    if (!mounted) return
+
+    const preloadAsset = (artwork) => {
+      if (!artwork) return
+
+      const key = `${artwork.slug}-${artwork.mediaType}-${connectionSpeed}`
+      
+      // Skip if already loaded for this connection speed
+      if (preloadedAssets.has(key)) return
+
+      switch (artwork.mediaType) {
+        case 'image':
+          if (artwork.imageUrl) {
+            // Use original URL for images to preserve aspect ratio
+            const optimizedUrl = artwork.imageUrl + '?auto=format&q=85'
+            
+            const img = new Image()
+            img.onload = () => {
+              setPreloadedAssets(prev => new Map(prev).set(key, { 
+                type: 'image', 
+                url: optimizedUrl,
+                originalUrl: artwork.imageUrl,
+                loaded: true,
+                connectionSpeed: connectionSpeed
+              }))
+            }
+            img.onerror = () => {
+              console.warn(`Failed to preload image: ${optimizedUrl}`)
+            }
+            img.src = optimizedUrl
+          }
+          break
+          
+        case 'video':
+          // Preload video thumbnail with just format optimization
+          if (artwork.videoThumbnailUrl) {
+            const optimizedThumbnail = artwork.videoThumbnailUrl + '?auto=format&q=75'
+            
+            const img = new Image()
+            img.onload = () => {
+              setPreloadedAssets(prev => new Map(prev).set(key, { 
+                type: 'video-thumbnail', 
+                url: optimizedThumbnail,
+                loaded: true,
+                connectionSpeed: connectionSpeed
+              }))
+            }
+            img.onerror = () => {
+              console.warn(`Failed to preload video thumbnail: ${optimizedThumbnail}`)
+            }
+            img.src = optimizedThumbnail
+          }
+          break
+          
+        case 'pdf':
+          if (artwork.pdfThumbnailUrl) {
+            const optimizedThumbnail = getOptimizedImageUrl(artwork.pdfThumbnailUrl, connectionSpeed, 'image')
+            
+            const img = new Image()
+            img.onload = () => {
+              setPreloadedAssets(prev => new Map(prev).set(key, { 
+                type: 'pdf-thumbnail', 
+                url: optimizedThumbnail,
+                loaded: true,
+                connectionSpeed: connectionSpeed
+              }))
+            }
+            img.src = optimizedThumbnail
+          }
+          break
+          
+        case 'audio':
+          if (artwork.audioThumbnailUrl) {
+            const optimizedThumbnail = getOptimizedImageUrl(artwork.audioThumbnailUrl, connectionSpeed, 'image')
+            
+            const img = new Image()
+            img.onload = () => {
+              setPreloadedAssets(prev => new Map(prev).set(key, { 
+                type: 'audio-thumbnail', 
+                url: optimizedThumbnail,
+                loaded: true,
+                connectionSpeed: connectionSpeed
+              }))
+            }
+            img.src = optimizedThumbnail
+          }
+          break
+      }
+    }
+
+    // Get artworks to preload around current position
+    const artworksToPreload = getArtworksToPreload()
+    artworksToPreload.forEach(preloadAsset)
+
+  }, [currentIndex, getArtworksToPreload, mounted, connectionSpeed])
+
   // Navigation function
   const navigate = useCallback((direction) => {
     const targetArtwork = direction === 'next' ? nextArtwork : prevArtwork
@@ -79,7 +215,7 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
     setIsNavigating(true)
     setCurrentArtworkSlug(targetArtwork.slug)
     
-    // Only update URL if mounted (client-side)
+    // Update URL without full page reload
     if (mounted && typeof window !== 'undefined') {
       const newUrl = `/portfolio/${portfolioData.slug}/${targetArtwork.slug}`
       window.history.pushState({}, '', newUrl)
@@ -94,107 +230,7 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
     setTimeout(() => setIsNavigating(false), 100)
   }, [nextArtwork, prevArtwork, portfolioData.slug, portfolioData.title, mounted])
 
-  // Robust preloading with duplicate prevention - only after mount
-  useEffect(() => {
-    if (!mounted) return
-
-    const preloadAsset = (artwork) => {
-      if (!artwork) return
-
-      const key = `${artwork.slug}-${artwork.mediaType}`
-      
-      // Skip if already loaded or currently loading
-      if (preloadedAssets.has(key) || loadingAssets.has(key)) return
-
-      // Mark as loading
-      setLoadingAssets(prev => new Set(prev).add(key))
-
-      const handleLoadComplete = () => {
-        setLoadingAssets(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(key)
-          return newSet
-        })
-      }
-
-      switch (artwork.mediaType) {
-        case 'image':
-          if (artwork.imageUrl) {
-            // Choose image based on connection speed
-            const imageUrl = connectionSpeed === 'slow' && artwork.lowResImageUrl 
-              ? artwork.lowResImageUrl 
-              : artwork.imageUrl
-
-            const img = new Image()
-            img.onload = () => {
-              setPreloadedAssets(prev => new Map(prev).set(key, {
-                type: 'image',
-                url: imageUrl,
-                highResUrl: artwork.imageUrl,
-                loaded: true,
-                isLowRes: connectionSpeed === 'slow' && artwork.lowResImageUrl
-              }))
-              handleLoadComplete()
-            }
-            img.onerror = () => {
-              console.warn(`Failed to preload image: ${imageUrl}`)
-              handleLoadComplete()
-            }
-            img.src = imageUrl
-          }
-          break
-          
-        case 'video':
-          if (artwork.videoThumbnailUrl) {
-            const img = new Image()
-            img.onload = () => {
-              setPreloadedAssets(prev => new Map(prev).set(key, {
-                type: 'video-thumbnail',
-                url: artwork.videoThumbnailUrl,
-                loaded: true
-              }))
-              handleLoadComplete()
-            }
-            img.onerror = () => {
-              console.warn(`Failed to preload video thumbnail: ${artwork.videoThumbnailUrl}`)
-              handleLoadComplete()
-            }
-            img.src = artwork.videoThumbnailUrl
-          } else {
-            handleLoadComplete()
-          }
-          break
-          
-        default:
-          handleLoadComplete()
-      }
-    }
-
-    // Preload adjacent artworks
-    const artworksToPreload = []
-    
-    // Previous artwork
-    if (prevArtwork) artworksToPreload.push(prevArtwork)
-    
-    // Next artwork
-    if (nextArtwork) artworksToPreload.push(nextArtwork)
-    
-    // One more in each direction for better UX
-    const prevPrevIndex = currentIndex > 1 
-      ? currentIndex - 2 
-      : portfolioData.artworks.length - (2 - currentIndex)
-    const nextNextIndex = currentIndex < portfolioData.artworks.length - 2 
-      ? currentIndex + 2 
-      : (currentIndex + 2) % portfolioData.artworks.length
-      
-    if (prevPrevIndex >= 0) artworksToPreload.push(portfolioData.artworks[prevPrevIndex])
-    if (nextNextIndex < portfolioData.artworks.length) artworksToPreload.push(portfolioData.artworks[nextNextIndex])
-
-    artworksToPreload.forEach(preloadAsset)
-
-  }, [currentIndex, prevArtwork, nextArtwork, portfolioData.artworks, mounted, connectionSpeed, preloadedAssets, loadingAssets])
-
-  // Keyboard navigation - only after mount
+  // Keyboard navigation
   useEffect(() => {
     if (!mounted) return
 
@@ -212,10 +248,20 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate, mounted])
 
+  // Update URL when component mounts or artwork changes
+  useEffect(() => {
+    if (!mounted) return
+
+    const currentUrl = `/portfolio/${portfolioData.slug}/${currentArtworkSlug}`
+    if (window.location.pathname !== currentUrl) {
+      window.history.replaceState({}, '', currentUrl)
+    }
+  }, [currentArtworkSlug, portfolioData.slug, mounted])
+
   function renderArtworkDisplay(artwork) {
     if (!artwork) return null
 
-    const preloadedAsset = preloadedAssets.get(`${artwork.slug}-${artwork.mediaType}`)
+    const preloadedAsset = preloadedAssets.get(`${artwork.slug}-${artwork.mediaType}-${connectionSpeed}`)
     
     switch (artwork.mediaType) {
       case "image":
@@ -230,54 +276,38 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
                 opacity: isNavigating ? 0.7 : 1,
                 transition: 'opacity 0.2s ease'
               }}
-              onLoad={() => {
-                // If we loaded a low-res version, upgrade to high-res after display
-                if (preloadedAsset.isLowRes && preloadedAsset.highResUrl) {
-                  setTimeout(() => {
-                    const highResImg = new Image()
-                    highResImg.onload = () => {
-                      setPreloadedAssets(prev => {
-                        const updated = new Map(prev)
-                        const key = `${artwork.slug}-${artwork.mediaType}`
-                        updated.set(key, {
-                          ...preloadedAsset,
-                          url: preloadedAsset.highResUrl,
-                          isLowRes: false
-                        })
-                        return updated
-                      })
-                    }
-                    highResImg.src = preloadedAsset.highResUrl
-                  }, 500) // Wait 500ms before upgrading
-                }
-              }}
             />
           )
         }
         
-        // Fallback to ResponsiveArtworkImage with connection-aware src
-        const imageSrc = connectionSpeed === 'slow' && artwork.lowResImageUrl 
-          ? artwork.lowResImageUrl 
-          : artwork.imageUrl
-          
+        // Fallback with just format optimization (no dimensions)
+        const optimizedImageUrl = artwork.imageUrl + '?auto=format&q=85'
         return (
           <Suspense fallback={<div className={styles.skeletonImage}></div>}>
             <ResponsiveArtworkImage
-              src={imageSrc}
+              src={optimizedImageUrl}
               alt={artwork.displayableTitle || "Artwork"}
               title={artwork.displayableTitle}
               priority={true}
+              style={{ 
+                opacity: isNavigating ? 0.7 : 1,
+                transition: 'opacity 0.2s ease'
+              }}
             />
           </Suspense>
         )
         
       case "video":
+        const optimizedThumbnail = artwork.videoThumbnailUrl 
+          ? artwork.videoThumbnailUrl + '?auto=format&q=75'
+          : null
+          
         return (
           <div className={styles.videoContainer}>
             {artwork.muxPlaybackId ? (
               <MuxVideo
                 playbackId={artwork.muxPlaybackId}
-                poster={artwork.videoThumbnailUrl}
+                poster={optimizedThumbnail}
                 title={artwork.displayableTitle || "Video artwork"}
                 className={styles.artworkVideo}
                 controls={true}
@@ -289,7 +319,7 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
                 controls
                 className={styles.artworkVideo}
                 preload="none"
-                poster={artwork.videoThumbnailUrl}
+                poster={optimizedThumbnail}
               />
             ) : artwork.externalVideoUrl ? (
               <Suspense fallback={<div className={styles.skeletonVideo}></div>}>
@@ -347,6 +377,8 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
 
   return (
     <div className={styles.pageWrapper}>
+
+      
       {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
         <Link href="/" className={styles.breadcrumbLink}>
@@ -435,6 +467,8 @@ export default function ClientArtworkNavigator({ portfolioData, initialArtworkSl
       <ArtworkNavigation
         prevUrl={`/portfolio/${portfolioData.slug}/${prevArtwork.slug}`}
         nextUrl={`/portfolio/${portfolioData.slug}/${nextArtwork.slug}`}
+        onPrevClick={() => navigate('prev')}
+        onNextClick={() => navigate('next')}
       />
     </div>
   )
