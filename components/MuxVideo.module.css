@@ -2,7 +2,6 @@
 .muxPlayerContainer {
   /* Default fallback dimensions - will be overridden by JavaScript */
   width: 100%;
-  height: 70vh;
   max-width: 90vw;
   display: flex;
   align-items: center;

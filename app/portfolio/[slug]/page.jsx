@@ -25,7 +25,7 @@ export async function generateStaticParams() {
   }));
 }
 
-// Skeleton components (keep your existing ones)
+// Skeleton components
 function PortfolioBreadcrumbsSkeleton() {
   return (
     <div className={styles.breadcrumbs}>
@@ -62,7 +62,7 @@ function SubPortfoliosSkeleton() {
   );
 }
 
-// Optimized data fetching with smaller initial payload
+// Optimized data fetching with connection-aware queries
 async function getPortfolioBasicInfo(slug) {
   return await client.fetch(
     `
@@ -93,12 +93,11 @@ async function getPortfolioContent(portfolioId) {
         "displayableTitle": select(displayTitle == true => title, null),
         mediaType,
         "slug": slug.current,
-        // Smaller initial images for faster loading
-        "imageUrl": image.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
-        "lowResImageUrl": lowResImage.asset->url + "?w=100&h=75&fit=crop&auto=format&q=60",
-        "videoThumbnailUrl": videoThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
-        "pdfThumbnailUrl": pdfThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
-        "audioThumbnailUrl": audioThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
+        // Base image URLs - connection-aware component will optimize
+        "imageUrl": image.asset->url,
+        "videoThumbnailUrl": videoThumbnail.asset->url,
+        "pdfThumbnailUrl": pdfThumbnail.asset->url,
+        "audioThumbnailUrl": audioThumbnail.asset->url,
         // Only include Mux fields if needed
         ...select(mediaType == "video" => {
           muxPlaybackId,
@@ -112,16 +111,11 @@ async function getPortfolioContent(portfolioId) {
         "slug": slug.current,
         description,
         order,
-        // Smaller cover images
+        // Base cover image URLs - connection-aware component will optimize
         "coverImageUrl": coalesce(
-          coverArtwork->image.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85",
-          coverImage.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85",
-          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85"
-        ),
-        "lowResCoverUrl": coalesce(
-          coverArtwork->image.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60",
-          coverImage.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60",
-          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60"
+          coverArtwork->image.asset->url,
+          coverImage.asset->url,
+          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url
         )
       }
     }
@@ -190,7 +184,7 @@ export default async function Portfolio({ params }) {
         <p className={styles.description}>{portfolio.description}</p>
       ) : null}
 
-      {/* Sub-portfolios with optimized images */}
+      {/* Sub-portfolios with connection-aware images */}
       {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
         <Suspense fallback={<SubPortfoliosSkeleton />}>
           <div className={styles.subPortfolioList}>
@@ -209,12 +203,10 @@ export default async function Portfolio({ params }) {
                         alt={subPortfolio.title}
                         width={400}
                         height={300}
-                        placeholder="blur"
-                        blurDataURL={subPortfolio.lowResCoverUrl || "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Rq5TnyKnLYs1rBsGY4n1mT3/h7BZIJe9fIq0WXlPOuYYrN9t1EJo0ZqGPJOmWUGOGwAAEcELgW+wbAVeV1OlTJlyEZnQ5JUJKFwqaHoRkAVUYjLOUYkqwNaHfGnPV0r3/ahfCFZGbfLxXqDtg"}
+                        priority={index < 2}
                         loading={index < 2 ? "eager" : "lazy"}
-                        decoding="async"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={85}
+                        className={styles.portfolioImageInner}
                       />
                     </div>
                   )}
@@ -234,7 +226,7 @@ export default async function Portfolio({ params }) {
         </Suspense>
       )}
 
-      {/* Artworks with improved loading */}
+      {/* Artworks with connection-aware loading */}
       {portfolio.artworks && portfolio.artworks.length > 0 && (
         <Suspense fallback={
           <ArtworkGrid 

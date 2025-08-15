@@ -32,6 +32,26 @@ export default function MuxVideo({
     );
   }
 
+  // AGGRESSIVE reset when playbackId changes
+  useEffect(() => {
+    console.log('🔄 PlaybackId changed, HARD RESET of all state');
+    
+    // Force immediate DOM style reset
+    if (containerRef.current) {
+      containerRef.current.style.width = '';
+      containerRef.current.style.height = '';
+      containerRef.current.style.maxWidth = '';
+      containerRef.current.style.maxHeight = '';
+      console.log('💥 FORCED DOM RESET - cleared all inline styles');
+    }
+    
+    // Reset React state
+    setContainerStyle({});
+    setAspectRatio(null);
+    setError(null);
+    setRetryCount(0);
+  }, [playbackId]);
+
   // Cleanup function to prevent memory leaks
   const cleanup = useCallback(() => {
     console.log('Cleaning up video resources...');
@@ -51,10 +71,10 @@ export default function MuxVideo({
     setRetryCount(0);
   }, []);
 
-  // Cleanup on unmount and playbackId change
+  // Cleanup on unmount
   useEffect(() => {
     return cleanup;
-  }, [cleanup, playbackId]);
+  }, [cleanup]);
 
   // Set up CSS custom property for viewport height (Safari mobile fix)
   useEffect(() => {
@@ -73,8 +93,8 @@ export default function MuxVideo({
     };
   }, []);
 
-  // Calculate optimal container dimensions
-  const calculateContainerDimensions = useCallback((videoWidth, videoHeight, isSafari = false) => {
+  // Calculate optimal container dimensions (NO useCallback)
+  const calculateContainerDimensions = (videoWidth, videoHeight, isSafari = false) => {
     const ratio = videoWidth / videoHeight;
     const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
     const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
@@ -131,8 +151,8 @@ export default function MuxVideo({
           containerHeight = containerWidth / ratio;
         }
       }
-    } else if (ratio > 1.2) {
-      // Landscape video
+    } else if (ratio >= 1.2) {
+      // Landscape video (fixed the condition)
       containerHeight = Math.min(viewportHeight * 0.7, 600);
       containerWidth = Math.min(viewportWidth * 0.9, containerHeight * ratio);
       
@@ -153,11 +173,14 @@ export default function MuxVideo({
       maxWidth: 'none',
       maxHeight: 'none'
     };
-  }, []);
+  };
 
   // Handle when video metadata is loaded
   const handleLoadedMetadata = (event) => {
     const video = event.target;
+    
+    console.log('🎬 METADATA LOADED for playbackId:', playbackId);
+    console.log('Current state before calculation:', { containerStyle, aspectRatio });
     
     if (!video.videoWidth || !video.videoHeight) {
       console.log('Safari being Safari - dimensions not ready yet, retrying...');
@@ -178,9 +201,9 @@ export default function MuxVideo({
           
           const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
           const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight, isSafari);
+          console.log('🔧 SETTING NEW STYLE (RETRY):', newStyle);
           setContainerStyle(newStyle);
           
-          console.log('Applied container style from retry (Safari):', newStyle);
           return;
         } 
         
@@ -207,9 +230,8 @@ export default function MuxVideo({
     
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const newStyle = calculateContainerDimensions(video.videoWidth, video.videoHeight, isSafari);
+    console.log('🔧 SETTING NEW STYLE (NORMAL):', newStyle);
     setContainerStyle(newStyle);
-    
-    console.log('Applied container style:', newStyle);
   };
 
   // Handle when user clicks play - this is when real dimensions become available
@@ -321,7 +343,7 @@ export default function MuxVideo({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [aspectRatio, calculateContainerDimensions]);
+  }, [aspectRatio]);
 
   // Show error state if needed
   if (error && retryCount >= 3) {
