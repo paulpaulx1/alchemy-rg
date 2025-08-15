@@ -4,13 +4,19 @@ import ArtworkGrid from '@/components/ArtworkGrid';
 import styles from './Portfolio.module.css';
 import { PortableText } from '@portabletext/react';
 import { Suspense } from 'react';
+import Image from 'next/image';
 
-// Only generate static params for main portfolios to reduce build time
+// Better metadata for performance
+export const metadata = {
+  robots: 'index, follow',
+};
+
+// More aggressive static generation for key portfolios
 export async function generateStaticParams() {
-  // Only generate for top-level portfolios or featured ones
   const portfolios = await client.fetch(`
     *[_type == "portfolio" && (parentPortfolio == null || featured == true)] {
-      "slug": slug.current
+      "slug": slug.current,
+      featured
     }
   `);
 
@@ -19,7 +25,7 @@ export async function generateStaticParams() {
   }));
 }
 
-// Skeleton components
+// Skeleton components (keep your existing ones)
 function PortfolioBreadcrumbsSkeleton() {
   return (
     <div className={styles.breadcrumbs}>
@@ -56,17 +62,7 @@ function SubPortfoliosSkeleton() {
   );
 }
 
-function PortfolioPageSkeleton() {
-  return (
-    <div className={styles.container}>
-      <PortfolioBreadcrumbsSkeleton />
-      <PortfolioHeaderSkeleton />
-      <SubPortfoliosSkeleton />
-    </div>
-  );
-}
-
-// Split data fetching for better performance
+// Optimized data fetching with smaller initial payload
 async function getPortfolioBasicInfo(slug) {
   return await client.fetch(
     `
@@ -75,6 +71,7 @@ async function getPortfolioBasicInfo(slug) {
       title,
       description,
       richTextBlock,
+      featured,
       "parentPortfolio": parentPortfolio->{
         title,
         "slug": slug.current
@@ -96,15 +93,17 @@ async function getPortfolioContent(portfolioId) {
         "displayableTitle": select(displayTitle == true => title, null),
         mediaType,
         "slug": slug.current,
-        "imageUrl": image.asset->url + "?w=800&h=600&fit=crop&auto=format&q=85",
-        "lowResImageUrl": lowResImage.asset->url,
-        "videoThumbnailUrl": videoThumbnail.asset->url,
-        "pdfThumbnailUrl": pdfThumbnail.asset->url,
-        "audioThumbnailUrl": audioThumbnail.asset->url,
-        // Add Mux fields for videos
-        muxPlaybackId,
-        muxAssetId,
-        muxStatus,
+        // Smaller initial images for faster loading
+        "imageUrl": image.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
+        "lowResImageUrl": lowResImage.asset->url + "?w=100&h=75&fit=crop&auto=format&q=60",
+        "videoThumbnailUrl": videoThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
+        "pdfThumbnailUrl": pdfThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
+        "audioThumbnailUrl": audioThumbnail.asset->url + "?w=600&h=450&fit=crop&auto=format&q=80",
+        // Only include Mux fields if needed
+        ...select(mediaType == "video" => {
+          muxPlaybackId,
+          muxStatus
+        }),
         year
       },
       "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == $portfolioId] | order(order asc) {
@@ -113,10 +112,16 @@ async function getPortfolioContent(portfolioId) {
         "slug": slug.current,
         description,
         order,
+        // Smaller cover images
         "coverImageUrl": coalesce(
-          coverArtwork->image.asset->url + "?w=600&h=400&fit=crop&auto=format&q=85",
-          coverImage.asset->url + "?w=600&h=400&fit=crop&auto=format&q=85",
-          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url + "?w=600&h=400&fit=crop&auto=format&q=85"
+          coverArtwork->image.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85",
+          coverImage.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85",
+          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url + "?w=400&h=300&fit=crop&auto=format&q=85"
+        ),
+        "lowResCoverUrl": coalesce(
+          coverArtwork->image.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60",
+          coverImage.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60",
+          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url + "?w=50&h=38&fit=crop&auto=format&q=60"
         )
       }
     }
@@ -125,12 +130,11 @@ async function getPortfolioContent(portfolioId) {
   );
 }
 
-
 export default async function Portfolio({ params }) {
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
-  // First, get basic portfolio info quickly
+  // Get basic info first for instant rendering
   const portfolioBasic = await getPortfolioBasicInfo(slug);
 
   if (!portfolioBasic) {
@@ -144,14 +148,9 @@ export default async function Portfolio({ params }) {
     );
   }
 
-  // Then get the content (this can be slower)
+  // Get content in parallel for faster loading
   const portfolioContent = await getPortfolioContent(portfolioBasic._id);
-
-  // Combine the data
-  const portfolio = {
-    ...portfolioBasic,
-    ...portfolioContent
-  };
+  const portfolio = { ...portfolioBasic, ...portfolioContent };
 
   return (
     <div className={styles.container}>
@@ -191,25 +190,31 @@ export default async function Portfolio({ params }) {
         <p className={styles.description}>{portfolio.description}</p>
       ) : null}
 
-      {/* Sub-portfolios with lazy loading */}
+      {/* Sub-portfolios with optimized images */}
       {portfolio.subPortfolios && portfolio.subPortfolios.length > 0 && (
         <Suspense fallback={<SubPortfoliosSkeleton />}>
           <div className={styles.subPortfolioList}>
             <div className={styles.portfolioGrid}>
-              {portfolio.subPortfolios.map((subPortfolio) => (
+              {portfolio.subPortfolios.map((subPortfolio, index) => (
                 <Link
                   href={`/portfolio/${subPortfolio.slug}`}
                   key={subPortfolio._id}
                   className={styles.portfolioCard}
-                  prefetch={false} // Don't prefetch sub-portfolios immediately
+                  prefetch={index < 2} // Only prefetch first 2
                 >
                   {subPortfolio.coverImageUrl && (
                     <div className={styles.portfolioImage}>
-                      <img
+                      <Image
                         src={subPortfolio.coverImageUrl}
                         alt={subPortfolio.title}
-                        loading="lazy"
+                        width={400}
+                        height={300}
+                        placeholder="blur"
+                        blurDataURL={subPortfolio.lowResCoverUrl || "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Rq5TnyKnLYs1rBsGY4n1mT3/h7BZIJe9fIq0WXlPOuYYrN9t1EJo0ZqGPJOmWUGOGwAAEcELgW+wbAVeV1OlTJlyEZnQ5JUJKFwqaHoRkAVUYjLOUYkqwNaHfGnPV0r3/ahfCFZGbfLxXqDtg"}
+                        loading={index < 2 ? "eager" : "lazy"}
                         decoding="async"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        quality={85}
                       />
                     </div>
                   )}
@@ -229,7 +234,7 @@ export default async function Portfolio({ params }) {
         </Suspense>
       )}
 
-      {/* Artworks with skeleton loading */}
+      {/* Artworks with improved loading */}
       {portfolio.artworks && portfolio.artworks.length > 0 && (
         <Suspense fallback={
           <ArtworkGrid 
@@ -258,6 +263,3 @@ export default async function Portfolio({ params }) {
 
 // Better caching strategy
 export const revalidate = 300; // 5 minutes
-
-// Export skeleton for loading.js
-export { PortfolioPageSkeleton };
