@@ -2,83 +2,30 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styles from './ArtworkGrid.module.css';
 
-// Connection detection utilities
-function getConnectionSpeed() {
-  if ('connection' in navigator) {
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    
-    if (connection) {
-      const effectiveType = connection.effectiveType;
-      const downlink = connection.downlink;
-      
-      if (effectiveType === 'slow-2g' || effectiveType === '2g' || downlink < 0.5) {
-        return 'very-slow';
-      } else if (effectiveType === '3g' || downlink < 1.5) {
-        return 'slow';
-      } else if (effectiveType === '4g' || downlink > 1.5) {
-        return 'fast';
-      }
-    }
-  }
-  
-  if ('deviceMemory' in navigator && navigator.deviceMemory <= 2) {
-    return 'slow';
-  }
-  
-  return 'moderate';
-}
+// Simple progressive loading - use lowRes first, then full quality
+function useProgressiveImage(lowResUrl, fullResUrl) {
+  const [currentSrc, setCurrentSrc] = useState(lowResUrl || fullResUrl);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-function optimizeImageUrl(imageUrl, connectionSpeed) {
-  if (!imageUrl) return imageUrl;
-  
-  const cleanUrl = imageUrl.split('?')[0];
-  
-  const sizes = {
-    'very-slow': { w: 300, h: 300, q: 40 },
-    'slow': { w: 400, h: 400, q: 60 },
-    'moderate': { w: 500, h: 500, q: 75 },
-    'fast': { w: 600, h: 600, q: 85 }
-  };
-  
-  const size = sizes[connectionSpeed] || sizes.moderate;
-  
-  return `${cleanUrl}?w=${size.w}&h=${size.h}&fit=crop&auto=format&q=${size.q}`;
-}
+  // If we have both URLs, start with lowRes and upgrade
+  if (lowResUrl && fullResUrl && !isLoaded) {
+    const img = new Image();
+    img.onload = () => {
+      setCurrentSrc(fullResUrl);
+      setIsLoaded(true);
+    };
+    img.src = fullResUrl;
+  }
 
-function generateBlurPlaceholder(imageUrl) {
-  if (!imageUrl) return null;
-  const cleanUrl = imageUrl.split('?')[0];
-  return `${cleanUrl}?w=20&h=20&fit=crop&auto=format&q=20&blur=50`;
+  return currentSrc;
 }
 
 export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount = 8 }) {
   const params = useParams();
   const portfolioSlug = params.slug;
-  const [connectionSpeed, setConnectionSpeed] = useState('moderate');
-  const [imageStates, setImageStates] = useState({});
-
-  useEffect(() => {
-    const speed = getConnectionSpeed();
-    setConnectionSpeed(speed);
-    console.log('ArtworkGrid connection speed:', speed);
-    
-    // Listen for connection changes
-    if ('connection' in navigator) {
-      const connection = navigator.connection;
-      
-      const handleConnectionChange = () => {
-        const newSpeed = getConnectionSpeed();
-        setConnectionSpeed(newSpeed);
-        console.log('ArtworkGrid connection changed to:', newSpeed);
-      };
-      
-      connection.addEventListener('change', handleConnectionChange);
-      return () => connection.removeEventListener('change', handleConnectionChange);
-    }
-  }, []);
 
   // Show loading skeletons
   if (isLoading) {
@@ -109,78 +56,39 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
 
   const isSingleArtwork = artworks.length === 1;
 
-  const handleImageLoad = (artworkId, imageType) => {
-    setImageStates(prev => ({
-      ...prev,
-      [`${artworkId}-${imageType}`]: { loaded: true }
-    }));
-  };
-
-  const handleImageError = (artworkId, imageType) => {
-    setImageStates(prev => ({
-      ...prev,
-      [`${artworkId}-${imageType}`]: { error: true }
-    }));
-  };
-
   function renderArtworkThumbnail(artwork, index) {
-    const imageKey = `${artwork._id}-${artwork.mediaType}`;
-    const imageState = imageStates[imageKey] || {};
     const priority = index < 4; // First 4 images get priority
 
     switch (artwork.mediaType) {
       case 'image':
-        const optimizedImageUrl = optimizeImageUrl(artwork.imageUrl, connectionSpeed);
-        const blurDataURL = generateBlurPlaceholder(artwork.imageUrl);
+        // Use lowRes if available, otherwise fallback to original with basic optimization
+        const imageUrl = artwork.lowResImageUrl || artwork.imageUrl;
+        const displayUrl = imageUrl ? `${imageUrl}?auto=format&fit=crop&w=600&h=600&q=75` : null;
         
-        return (
-          <div style={{ position: 'relative' }}>
-            {/* Blur placeholder */}
-            {blurDataURL && !imageState.loaded && (
-              <img
-                src={blurDataURL}
-                alt=""
-                className={styles.thumbnail}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  filter: 'blur(5px)',
-                  zIndex: 1
-                }}
-              />
-            )}
-            
-            {/* Main image */}
-            <img
-              src={optimizedImageUrl}
-              alt={artwork.title || 'Untitled artwork'}
-              className={styles.thumbnail}
-              loading={priority ? 'eager' : 'lazy'}
-              onLoad={() => handleImageLoad(artwork._id, artwork.mediaType)}
-              onError={() => handleImageError(artwork._id, artwork.mediaType)}
-              style={{ 
-                position: 'relative', 
-                zIndex: 2,
-                opacity: imageState.loaded ? 1 : 0,
-                transition: 'opacity 0.3s ease-in-out'
-              }}
-            />
-          </div>
+        return displayUrl ? (
+          <img
+            src={displayUrl}
+            alt={artwork.title || 'Untitled artwork'}
+            className={styles.thumbnail}
+            loading={priority ? 'eager' : 'lazy'}
+          />
+        ) : (
+          <div className={styles.imagePlaceholder}>No Image</div>
         );
 
       case 'video':
-        const optimizedVideoThumb = optimizeImageUrl(artwork.videoThumbnailUrl, connectionSpeed);
+        const videoThumbUrl = artwork.videoThumbnailUrl 
+          ? `${artwork.videoThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`
+          : null;
         
         return (
           <div className={styles.videoThumbnail}>
-            {artwork.videoThumbnailUrl ? (
+            {videoThumbUrl ? (
               <img
-                src={optimizedVideoThumb}
+                src={videoThumbUrl}
                 alt={artwork.title || 'Untitled video'}
                 className={styles.thumbnail}
                 loading={priority ? 'eager' : 'lazy'}
-                onLoad={() => handleImageLoad(artwork._id, 'video')}
               />
             ) : (
               <div className={styles.videoPlaceholder}>
@@ -197,7 +105,7 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
             {artwork.pdfThumbnailUrl ? (
               <div className={styles.pdfThumbnail}>
                 <img
-                  src={optimizeImageUrl(artwork.pdfThumbnailUrl, connectionSpeed)}
+                  src={`${artwork.pdfThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
                   alt={artwork.title || 'Untitled PDF'}
                   className={styles.thumbnail}
                   loading={priority ? 'eager' : 'lazy'}
@@ -206,7 +114,7 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
             ) : (
               <div className={styles.pdfDefaultThumbnail}>
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png?20241007091317"
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png"
                   alt={artwork.title || 'Untitled PDF'}
                   className={styles.defaultThumbnail}
                   loading="lazy"
@@ -220,18 +128,18 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
         return (
           <>
             {artwork.audioThumbnailUrl ? (
-              <div className={styles.pdfThumbnail}>
+              <div className={styles.audioThumbnail}>
                 <img
-                  src={optimizeImageUrl(artwork.audioThumbnailUrl, connectionSpeed)}
+                  src={`${artwork.audioThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
                   alt={artwork.title || 'Untitled audio'}
                   className={styles.thumbnail}
                   loading={priority ? 'eager' : 'lazy'}
                 />
               </div>
             ) : (
-              <div className={styles.pdfDefaultThumbnail}>
+              <div className={styles.audioDefaultThumbnail}>
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png?20231011144101"
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png"
                   alt={artwork.title || 'Untitled Audio File'}
                   className={styles.defaultThumbnail}
                   loading="lazy"
@@ -257,7 +165,7 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
           href={`/portfolio/${portfolioSlug}/${artwork.slug}`}
           key={artwork._id}
           className={styles.gridItem}
-          prefetch={connectionSpeed !== 'very-slow' && index < 2} // Smart prefetching
+          prefetch={index < 2} // Only prefetch first 2
         >
           <div className={styles.imageContainer}>
             <div className={styles.innerContainer}>
@@ -277,26 +185,6 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
           </div>
         </Link>
       ))}
-      
-      {/* Connection indicator for development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '20px',
-          background: connectionSpeed === 'very-slow' ? '#ff4444' : 
-                     connectionSpeed === 'slow' ? '#ff8800' : 
-                     connectionSpeed === 'moderate' ? '#ffbb00' : '#44ff44',
-          color: 'white',
-          padding: '8px 12px',
-          fontSize: '12px',
-          borderRadius: '6px',
-          zIndex: 1000,
-          fontFamily: 'monospace'
-        }}>
-          Grid: {connectionSpeed}
-        </div>
-      )}
     </div>
   );
 }
