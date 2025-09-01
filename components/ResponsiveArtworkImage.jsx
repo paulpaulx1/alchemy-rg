@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import styles from '../app/portfolio/[slug]/[artworkSlug]/ArtworkPage.module.css';
 
@@ -13,17 +12,10 @@ export default function ResponsiveArtworkImage({
   className = '',
   ...props 
 }) {
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   const handleImageLoad = (e) => {
     const img = e.target;
     const isPortrait = img.naturalHeight > img.naturalWidth;
-    
-    // Store actual dimensions
-    setDimensions({
-      width: img.naturalWidth,
-      height: img.naturalHeight
-    });
     
     img.classList.remove(styles.portraitImage, styles.landscapeImage);
     
@@ -35,16 +27,13 @@ export default function ResponsiveArtworkImage({
   };
 
   return (
-    <Image
+    <img
       src={src}
       alt={alt || title || "Untitled artwork"}
-      width={dimensions.width}
-      height={dimensions.height}
       className={`${styles.artworkImage} ${className}`}
       onLoad={handleImageLoad}
-      priority={priority}
+      loading={priority ? 'eager' : 'lazy'}
       style={style}
-      sizes="(max-width: 768px) 100vw, 90vw"
       {...props}
     />
   );
