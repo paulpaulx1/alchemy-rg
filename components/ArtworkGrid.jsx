@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
-import styles from './ArtworkGrid.module.css';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import styles from "./ArtworkGrid.module.css";
 
 // Simple progressive loading - use lowRes first, then full quality
 function useProgressiveImage(lowResUrl, fullResUrl) {
@@ -23,7 +23,11 @@ function useProgressiveImage(lowResUrl, fullResUrl) {
   return currentSrc;
 }
 
-export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount = 8 }) {
+export default function ArtworkGrid({
+  artworks,
+  isLoading = false,
+  skeletonCount = 8,
+}) {
   const params = useParams();
   const portfolioSlug = params.slug;
 
@@ -60,35 +64,37 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
     const priority = index < 4; // First 4 images get priority
 
     switch (artwork.mediaType) {
-      case 'image':
+      case "image":
         // Use lowRes if available, otherwise fallback to original with basic optimization
         const imageUrl = artwork.lowResImageUrl || artwork.imageUrl;
-        const displayUrl = imageUrl ? `${imageUrl}?auto=format&fit=crop&w=600&h=600&q=75` : null;
-        
+        const displayUrl = imageUrl
+          ? `${imageUrl}?auto=format&fit=crop&w=600&h=600&q=75`
+          : null;
+
         return displayUrl ? (
           <img
             src={displayUrl}
-            alt={artwork.title || 'Untitled artwork'}
+            alt={artwork.title || "Untitled artwork"}
             className={styles.thumbnail}
-            loading={priority ? 'eager' : 'lazy'}
+            loading={priority ? "eager" : "lazy"}
           />
         ) : (
           <div className={styles.imagePlaceholder}>No Image</div>
         );
 
-      case 'video':
-        const videoThumbUrl = artwork.videoThumbnailUrl 
+      case "video":
+        const videoThumbUrl = artwork.videoThumbnailUrl
           ? `${artwork.videoThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`
           : null;
-        
+
         return (
           <div className={styles.videoThumbnail}>
             {videoThumbUrl ? (
               <img
                 src={videoThumbUrl}
-                alt={artwork.title || 'Untitled video'}
+                alt={artwork.title || "Untitled video"}
                 className={styles.thumbnail}
-                loading={priority ? 'eager' : 'lazy'}
+                loading={priority ? "eager" : "lazy"}
               />
             ) : (
               <div className={styles.videoPlaceholder}>
@@ -99,23 +105,27 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
           </div>
         );
 
-      case 'pdf':
+      case "pdf":
         return (
           <>
             {artwork.pdfThumbnailUrl ? (
               <div className={styles.pdfThumbnail}>
-                <img
-                  src={`${artwork.pdfThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
-                  alt={artwork.title || 'Untitled PDF'}
-                  className={styles.thumbnail}
-                  loading={priority ? 'eager' : 'lazy'}
+                <Image
+                  src={artwork.imageUrl}
+                  alt={artwork.title}
+                  width={600}
+                  height={600}
+                  priority={index < 2} // Only first 2 images
+                  placeholder="blur" // Add blur placeholder
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
             ) : (
               <div className={styles.pdfDefaultThumbnail}>
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png"
-                  alt={artwork.title || 'Untitled PDF'}
+                  alt={artwork.title || "Untitled PDF"}
                   className={styles.defaultThumbnail}
                   loading="lazy"
                 />
@@ -124,23 +134,23 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
           </>
         );
 
-      case 'audio':
+      case "audio":
         return (
           <>
             {artwork.audioThumbnailUrl ? (
               <div className={styles.audioThumbnail}>
                 <img
                   src={`${artwork.audioThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
-                  alt={artwork.title || 'Untitled audio'}
+                  alt={artwork.title || "Untitled audio"}
                   className={styles.thumbnail}
-                  loading={priority ? 'eager' : 'lazy'}
+                  loading={priority ? "eager" : "lazy"}
                 />
               </div>
             ) : (
               <div className={styles.audioDefaultThumbnail}>
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png"
-                  alt={artwork.title || 'Untitled Audio File'}
+                  alt={artwork.title || "Untitled Audio File"}
                   className={styles.defaultThumbnail}
                   loading="lazy"
                 />
@@ -157,7 +167,7 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
   return (
     <div
       className={`${styles.grid} ${
-        isSingleArtwork ? styles.singleItemGrid : ''
+        isSingleArtwork ? styles.singleItemGrid : ""
       }`}
     >
       {artworks.map((artwork, index) => (
@@ -175,7 +185,7 @@ export default function ArtworkGrid({ artworks, isLoading = false, skeletonCount
           <div className={styles.artworkInfo}>
             <h3
               className={styles.artworkTitle}
-              alt={artwork.displayableTitle || 'Artwork'}
+              alt={artwork.displayableTitle || "Artwork"}
             >
               {artwork.displayableTitle}
             </h3>
