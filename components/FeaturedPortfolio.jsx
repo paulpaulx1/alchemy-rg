@@ -88,23 +88,35 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     if (validArtworks.length > 1) scheduleNext(SHARP_HOLD_MS);
   }, [initialized, validArtworks.length]);
 
-  /** Safe img setter (no broken icon/alt flash) */
-  const setLayerSrc = (el, src) => {
+  /** Safe img setter.
+   *  If assumeLoaded = true, we reveal immediately (we already preloaded/decoded),
+   *  preventing any gap between outgoing/incoming on slow devices.
+   */
+  const setLayerSrc = (el, src, assumeLoaded = false) => {
     if (!el) return;
     const img = el.querySelector("img");
     if (!img) return;
 
+    // Do not change opacity/filter here; caller sets those.
+    // Default hidden until we know it's ready.
     el.style.visibility = "hidden";
     img.onload = null;
     img.onerror = null;
 
     if (!src) { img.removeAttribute("src"); return; }
 
+    if (assumeLoaded) {
+      // We already awaited preload() → make it visible right away.
+      el.style.visibility = "visible";
+      img.setAttribute("src", src);
+      return;
+    }
+
     img.onload = () => { el.style.visibility = "visible"; img.onload = img.onerror = null; };
     img.onerror = () => { el.style.visibility = "hidden"; img.removeAttribute("src"); img.onload = img.onerror = null; };
 
     if (img.getAttribute("src") !== src) img.setAttribute("src", src);
-    else el.style.visibility = "visible";
+    else el.style.visibility = "visible"; // cached
   };
 
   /** Staggered dissolve: fade-out starts now; fade-in begins after STAGGER_MS.
@@ -122,9 +134,9 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       fill: "forwards",
       delay: 0,
     });
-    const outFilter = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), {
+    outgoingEl.animate(outKeyframes(MAX_BLUR_PX), {
       duration: Math.round(FADE_OUT_MS * 0.75),
-      easing: FILTER_EASE_OUT,   // quick drift away
+      easing: FILTER_EASE_OUT,
       fill: "forwards",
       delay: 0,
     });
@@ -136,9 +148,9 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       fill: "forwards",
       delay: STAGGER_MS,
     });
-    const inFilter = incomingEl.animate(inKeyframes(MAX_BLUR_PX), {
-      duration: Math.round(FADE_IN_MS * 0.85), // a touch longer for smoother focus
-      easing: FILTER_EASE_INOUT,               // smooth ease-in/out
+    incomingEl.animate(inKeyframes(MAX_BLUR_PX), {
+      duration: Math.round(FADE_IN_MS * 0.85),
+      easing: FILTER_EASE_INOUT,
       fill: "forwards",
       delay: STAGGER_MS,
     });
@@ -163,13 +175,15 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       try { await preload(firstUrl); } catch (_) {}
       if (cancelled) return;
 
-      setLayerSrc(layerARef.current, firstUrl);
-      setLayerSrc(layerBRef.current, null);
-
+      // Start states before making anything visible
       layerARef.current.style.opacity = "0";
       layerARef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
       layerBRef.current.style.opacity = "0";
       layerBRef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
+
+      // We preloaded → assumeLoaded=true (avoid any visibility gap)
+      setLayerSrc(layerARef.current, firstUrl, true);
+      setLayerSrc(layerBRef.current, null);
 
       await runDissolveStaggered({ incomingEl: layerARef.current, outgoingEl: layerBRef.current });
 
@@ -201,7 +215,12 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     const incomingEl = isAActiveRef.current ? layerBRef.current : layerARef.current;
     const outgoingEl = isAActiveRef.current ? layerARef.current : layerBRef.current;
 
-    setLayerSrc(incomingEl, nextSrc);
+    // Set incoming base styles BEFORE setting src
+    incomingEl.style.opacity = "0";
+    incomingEl.style.filter = `blur(${MAX_BLUR_PX}px)`;
+
+    // We preloaded → assumeLoaded=true (make it visible immediately at opacity:0)
+    setLayerSrc(incomingEl, nextSrc, true);
 
     await runDissolveStaggered({ incomingEl, outgoingEl });
 
