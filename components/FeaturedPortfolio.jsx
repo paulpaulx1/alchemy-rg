@@ -3,25 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./FeaturedPortfolio.module.css";
 
-// timings (meet-in-the-middle)
-const FADE_MS = 3000;          // identical duration for first + subsequent fades
-const SHARP_HOLD_MS = 2000;    // time an image stays fully sharp
-const MAX_BLUR_PX = 5;         // keep blur light so it never feels mushy
-const OPACITY_EASE = "linear"; // film-like dissolve (very even)
-const FILTER_EASE  = "ease-out";
+/** Timings */
+const FADE_OUT_MS = 3200;       // outgoing fade duration
+const FADE_IN_MS  = 3200;       // incoming fade duration
+const STAGGER_MS  = 100;        // delay before incoming starts
+const SHARP_HOLD_MS = 2000;     // fully sharp time between fades
 
-// keyframes helpers
-const inKeyframes = (maxBlur) => ([
-  { opacity: 0, filter: `blur(${maxBlur}px)` },
-  { opacity: 1, filter: "blur(0px)" }
-]);
-const outKeyframes = (maxBlur) => ([
+/** Look & feel */
+const MAX_BLUR_PX = 5;
+const OPACITY_EASE = "linear";                          // steady, film-like dissolve
+const FILTER_EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";   // outgoing blur clears quickly
+const FILTER_EASE_INOUT = "cubic-bezier(0.45, 0, 0.55, 1)"; // incoming blur eases in/out (smooth)
+
+/** Keyframes */
+const inKeyframes = (b) => [
+  { opacity: 0, filter: `blur(${b}px)` },
   { opacity: 1, filter: "blur(0px)" },
-  { opacity: 0, filter: `blur(${maxBlur}px)` }
-]);
-
-const animOpts = { duration: FADE_MS, easing: OPACITY_EASE, fill: "forwards" };
-const filterOpts = { duration: FADE_MS * 0.75, easing: FILTER_EASE, fill: "forwards" }; // blur clears a bit faster
+];
+const outKeyframes = (b) => [
+  { opacity: 1, filter: "blur(0px)" },
+  { opacity: 0, filter: `blur(${b}px)` },
+];
 
 export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
   const [allArtworks, setAllArtworks] = useState([firstArtwork]);
@@ -33,13 +35,17 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
   const layerBRef = useRef(null);
   const timeoutRef = useRef(null);
 
-  // latest refs for timers
+  // latest refs for timers/state
   const idxRef = useRef(idx);
   const isAActiveRef = useRef(isAActive);
   useEffect(() => { idxRef.current = idx; }, [idx]);
   useEffect(() => { isAActiveRef.current = isAActive; }, [isAActive]);
 
   const clearTimer = () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); timeoutRef.current = null; };
+  const scheduleNext = (delay = SHARP_HOLD_MS) => {
+    if (timeoutRef.current) return;
+    timeoutRef.current = setTimeout(() => { void crossfade(); }, delay);
+  };
 
   const getUrl = (art) =>
     art?.image?.asset?.optimizedUrl ||
@@ -59,7 +65,7 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       if (img.decode) img.decode().then(resolve).catch(() => resolve());
     });
 
-  // Fetch remaining artworks
+  /** Fetch more artworks */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -76,77 +82,78 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     return () => { cancelled = true; };
   }, [portfolioId]);
 
-  // ---- Safe img setter: hide layer if src missing/broken; show only when loaded ----
+  /** Auto-start once we have 2+ slides */
+  useEffect(() => {
+    if (!initialized) return;
+    if (validArtworks.length > 1) scheduleNext(SHARP_HOLD_MS);
+  }, [initialized, validArtworks.length]);
+
+  /** Safe img setter (no broken icon/alt flash) */
   const setLayerSrc = (el, src) => {
     if (!el) return;
     const img = el.querySelector("img");
     if (!img) return;
 
-    // Always start hidden; we'll reveal on successful load
     el.style.visibility = "hidden";
-
-    // Clear previous handlers
     img.onload = null;
     img.onerror = null;
 
-    if (!src) {
-      // No src → remove it to avoid broken icon/alt text
-      img.removeAttribute("src");
-      return;
-    }
+    if (!src) { img.removeAttribute("src"); return; }
 
-    img.onload = () => {
-      el.style.visibility = "visible";
-      // cleanup
-      img.onload = null;
-      img.onerror = null;
-    };
-    img.onerror = () => {
-      // Hide layer & clear src on error (no broken badge / alt text)
-      el.style.visibility = "hidden";
-      img.removeAttribute("src");
-      img.onload = null;
-      img.onerror = null;
-    };
+    img.onload = () => { el.style.visibility = "visible"; img.onload = img.onerror = null; };
+    img.onerror = () => { el.style.visibility = "hidden"; img.removeAttribute("src"); img.onload = img.onerror = null; };
 
-    // Set src AFTER handlers are in place
-    if (img.getAttribute("src") !== src) {
-      img.setAttribute("src", src);
-    } else {
-      // If same src (from preload cache), force visible
-      el.style.visibility = "visible";
-    }
+    if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+    else el.style.visibility = "visible";
   };
 
-  // Run one dissolve where both layers animate with identical timing
-  const runDissolve = async ({ incomingEl, outgoingEl }) => {
-    // ensure starting styles
+  /** Staggered dissolve: fade-out starts now; fade-in begins after STAGGER_MS.
+      Blur easings: outgoing = ease-out (quicker), incoming = ease-in-out (smooth). */
+  const runDissolveStaggered = async ({ incomingEl, outgoingEl }) => {
     incomingEl.style.opacity = "0";
     incomingEl.style.filter = `blur(${MAX_BLUR_PX}px)`;
     outgoingEl.style.opacity = "1";
     outgoingEl.style.filter = "blur(0px)";
 
-    // animate opacity + blur (same timing for both initial + subsequent)
-    const inAnim = incomingEl.animate(inKeyframes(MAX_BLUR_PX), animOpts);
-    const inFilter = incomingEl.animate(inKeyframes(MAX_BLUR_PX), filterOpts);
+    // Outgoing animations (start immediately)
+    const outAnim = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), {
+      duration: FADE_OUT_MS,
+      easing: OPACITY_EASE,
+      fill: "forwards",
+      delay: 0,
+    });
+    const outFilter = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), {
+      duration: Math.round(FADE_OUT_MS * 0.75),
+      easing: FILTER_EASE_OUT,   // quick drift away
+      fill: "forwards",
+      delay: 0,
+    });
 
-    const outAnim = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), animOpts);
-    const outFilter = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), filterOpts);
+    // Incoming animations (start after stagger)
+    const inAnim = incomingEl.animate(inKeyframes(MAX_BLUR_PX), {
+      duration: FADE_IN_MS,
+      easing: OPACITY_EASE,
+      fill: "forwards",
+      delay: STAGGER_MS,
+    });
+    const inFilter = incomingEl.animate(inKeyframes(MAX_BLUR_PX), {
+      duration: Math.round(FADE_IN_MS * 0.85), // a touch longer for smoother focus
+      easing: FILTER_EASE_INOUT,               // smooth ease-in/out
+      fill: "forwards",
+      delay: STAGGER_MS,
+    });
 
-    // wait for opacity animations to finish
-    await Promise.all([
-      inAnim.finished.catch(() => {}),
-      outAnim.finished.catch(() => {}),
-    ]);
+    // Wait for the incoming opacity to finish (the later animation)
+    await inAnim.finished.catch(() => {});
 
-    // snap final state
+    // Ensure final state
     incomingEl.style.opacity = "1";
     incomingEl.style.filter = "blur(0px)";
     outgoingEl.style.opacity = "0";
     outgoingEl.style.filter = `blur(${MAX_BLUR_PX}px)`;
   };
 
-  // First paint: fade in first artwork with the same dissolve as later
+  /** Initial paint */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -156,35 +163,34 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       try { await preload(firstUrl); } catch (_) {}
       if (cancelled) return;
 
-      // set sources
       setLayerSrc(layerARef.current, firstUrl);
-      setLayerSrc(layerBRef.current, null); // hidden, no src
+      setLayerSrc(layerBRef.current, null);
 
-      // start with A hidden/blurred, B hidden
       layerARef.current.style.opacity = "0";
       layerARef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
       layerBRef.current.style.opacity = "0";
       layerBRef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
 
-      // dissolve A in (B acts as outgoing but stays invisible)
-      await runDissolve({
-        incomingEl: layerARef.current,
-        outgoingEl: layerBRef.current,
-      });
+      await runDissolveStaggered({ incomingEl: layerARef.current, outgoingEl: layerBRef.current });
 
       setIdx(0);
       setIsAActive(true);
       setInitialized(true);
 
-      // schedule next fade
-      timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
+      if (validArtworks.length > 1) scheduleNext(SHARP_HOLD_MS);
+      else scheduleNext(1000); // poll until more slides arrive
     })();
 
     return () => { cancelled = true; clearTimer(); };
   }, [initialized, validArtworks.length]);
 
+  /** Crossfade loop */
   const crossfade = async () => {
-    if (validArtworks.length <= 1 || !layerARef.current || !layerBRef.current) return;
+    if (validArtworks.length <= 1 || !layerARef.current || !layerBRef.current) {
+      clearTimer();
+      scheduleNext(1000);
+      return;
+    }
 
     const current = idxRef.current;
     const nextIndex = (current + 1) % validArtworks.length;
@@ -195,28 +201,22 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     const incomingEl = isAActiveRef.current ? layerBRef.current : layerARef.current;
     const outgoingEl = isAActiveRef.current ? layerARef.current : layerBRef.current;
 
-    // set incoming src before animating (layer stays invisible until loaded)
     setLayerSrc(incomingEl, nextSrc);
 
-    await runDissolve({ incomingEl, outgoingEl });
+    await runDissolveStaggered({ incomingEl, outgoingEl });
 
-    // flip active layer + index
     setIsAActive((v) => !v);
     setIdx(nextIndex);
 
-    // schedule next crossfade (hold time only; fade time already elapsed)
     clearTimer();
-    timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
+    scheduleNext(SHARP_HOLD_MS);
   };
 
-  // Pause/resume on visibility change
+  /** Pause/resume on tab visibility */
   useEffect(() => {
     const onVis = () => {
       if (document.hidden) clearTimer();
-      else if (initialized) {
-        clearTimer();
-        timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
-      }
+      else if (initialized) { clearTimer(); scheduleNext(SHARP_HOLD_MS); }
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
