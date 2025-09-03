@@ -3,396 +3,232 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./FeaturedPortfolio.module.css";
 
+// “meet-in-the-middle” timings
+const FADE_MS = 3000;                 // unified crossfade duration
+const UNBLUR_DELAY_MS = 250;          // start unblurring shortly after fade starts
+const UNBLUR_MS = 1700;               // blur clears well before fade ends
+const SHARP_HOLD_MS = 2500;           // fully sharp time between fades
+
+// easing
+const OPACITY_EASE = "cubic-bezier(0.45, 0, 0.55, 1)";
+const FILTER_EASE  = "ease-out";      // clears blur steadily, not poppy
+const MAX_BLUR_PX = 5;                // lighter blur so mid-blur never lingers
+
 export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
-  // State for all artworks - start with just the first one
   const [allArtworks, setAllArtworks] = useState([firstArtwork]);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasLoadedAll, setHasLoadedAll] = useState(false);
-  
-  // Slideshow state
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [activeContainer, setActiveContainer] = useState('A');
-  
-  // Image states for both containers
-  const [imageA, setImageA] = useState({ opacity: '0', filter: 'blur(10px)', width: 'auto', height: 'auto', src: '' });
-  const [imageB, setImageB] = useState({ opacity: '0', filter: 'blur(10px)', width: 'auto', height: 'auto', src: '' });
-  
-  // Refs for timeouts
-  const timeoutsRef = useRef([]);
-  
-  // Fetch remaining artworks in background - only when needed
-  useEffect(() => {
-    const fetchRemainingArtworks = async () => {
-      if (hasLoadedAll || isLoadingMore) return;
-      
-      setIsLoadingMore(true);
-      
-      try {
-        // Your existing API already skips the first image with [1...20]
-        const response = await fetch(`/api/artworks/${portfolioId}`);
-        const remainingData = await response.json();
-        
-        if (remainingData?.artworks?.length > 0) {
-          const validRemaining = remainingData.artworks.filter(
-            (artwork) => artwork?.image?.asset?.url
-          ).map(artwork => ({
-            ...artwork,
-            image: {
-              asset: {
-                // Use optimized URL with target ~150kb for slideshow
-                url: artwork.image.asset.optimizedUrl || 
-                     `${artwork.image.asset.url}?w=1200&h=800&fit=max&auto=format&q=75`
-              }
-            }
-          }));
-          
-          setAllArtworks(prev => [...prev, ...validRemaining]);
-        }
-        
-        setHasLoadedAll(true);
-      } catch (error) {
-        console.error('Error fetching remaining artworks:', error);
-      } finally {
-        setIsLoadingMore(false);
-      }
-    };
-    
-    // Start the slideshow immediately with first image, then fetch more in background
-    if (portfolioId && !hasLoadedAll) {
-      // Small delay to let the first image start showing
-      setTimeout(() => {
-        fetchRemainingArtworks();
-      }, 1000);
-    }
-  }, [portfolioId, hasLoadedAll, isLoadingMore]);
-  
-  // Filter valid artworks
-  const validArtworks = allArtworks.filter(
-    (artwork) => artwork?.image?.asset?.url
-  );
-  
-  // Helper to add a timeout and track it
-  const addTimeout = (callback, delay) => {
-    const id = setTimeout(callback, delay);
-    timeoutsRef.current.push(id);
-    return id;
+  const [firstImageReady, setFirstImageReady] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const [isAActive, setIsAActive] = useState(true);
+
+  const [layerA, setLayerA] = useState({ src: "", opacity: 0, blur: 1 });
+  const [layerB, setLayerB] = useState({ src: "", opacity: 0, blur: 1 });
+
+  const timeoutRef = useRef(null);
+  const blurTimeoutRef = useRef(null);
+
+  // keep latest values for timers
+  const idxRef = useRef(idx);
+  const isAActiveRef = useRef(isAActive);
+  useEffect(() => { idxRef.current = idx; }, [idx]);
+  useEffect(() => { isAActiveRef.current = isAActive; }, [isAActive]);
+
+  const clearTimers = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    blurTimeoutRef.current = null;
   };
-  
-  // Helper to clear all timeouts
-  const clearAllTimeouts = () => {
-    timeoutsRef.current.forEach(id => clearTimeout(id));
-    timeoutsRef.current = [];
-  };
-  
-  // Set image to container - improved error handling
-  const setImageToContainer = (containerType, url, forceRecalculate = false) => {
-    return new Promise((resolve) => {
-      // Don't try to load if URL is invalid
-      if (!url || typeof url !== 'string') {
-        resolve();
-        return;
-      }
-      
-      const tempImg = new Image();
-      
-      tempImg.onload = () => {
-        try {
-          // Calculate size with better bounds checking
-          const viewportHeight = window.innerHeight;
-          const viewportWidth = window.innerWidth;
-          
-          // Safety checks
-          if (!viewportHeight || !viewportWidth || !tempImg.width || !tempImg.height) {
-            resolve();
-            return;
-          }
-          
-          const maxHeight = viewportHeight * 0.8;
-          const maxWidth = viewportWidth * 0.9;
-          
-          let width = tempImg.width;
-          let height = tempImg.height;
-          
-          // Calculate aspect ratio once
-          const aspectRatio = width / height;
-          
-          // Resize logic with better precision
-          if (width > maxWidth) {
-            width = maxWidth;
-            height = width / aspectRatio;
-          }
-          
-          if (height > maxHeight) {
-            height = maxHeight;
-            width = height * aspectRatio;
-          }
-          
-          // Ensure we have valid dimensions
-          if (width <= 0 || height <= 0 || !isFinite(width) || !isFinite(height)) {
-            resolve();
-            return;
-          }
-          
-          // Update the appropriate container state
-          const imageState = {
-            width: `${Math.round(width)}px`,
-            height: `${Math.round(height)}px`,
-            src: url,
-            opacity: forceRecalculate ? (containerType === activeContainer ? '1' : '0') : '0',
-            filter: forceRecalculate ? (containerType === activeContainer ? 'blur(0px)' : 'blur(10px)') : 'blur(10px)'
-          };
-          
-          if (containerType === 'A') {
-            setImageA(imageState);
-          } else {
-            setImageB(imageState);
-          }
-          
-          resolve();
-        } catch (error) {
-          console.error("Error calculating image dimensions:", error);
-          resolve();
-        }
-      };
-      
-      tempImg.onerror = () => {
-        console.error("Failed to load image:", url);
-        resolve();
-      };
-      
-      // Add timeout for loading
-      const loadTimeout = setTimeout(() => {
-        console.warn("Image load timeout:", url);
-        resolve();
-      }, 5000);
-      
-      tempImg.onload = (originalOnLoad => {
-        return function(...args) {
-          clearTimeout(loadTimeout);
-          originalOnLoad.apply(this, args);
-        };
-      })(tempImg.onload);
-      
-      tempImg.onerror = (originalOnError => {
-        return function(...args) {
-          clearTimeout(loadTimeout);
-          originalOnError.apply(this, args);
-        };
-      })(tempImg.onerror);
-      
-      tempImg.src = url;
+
+  const getUrl = (art) =>
+    art?.image?.asset?.optimizedUrl ||
+    (art?.image?.asset?.url
+      ? `${art.image.asset.url}?w=1200&h=800&fit=max&auto=format&q=75`
+      : "");
+
+  const preload = (url) =>
+    new Promise((resolve, reject) => {
+      if (!url) return reject(new Error("No URL"));
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+      if (img.decode) img.decode().then(resolve).catch(() => resolve());
     });
-  };
-  
-  // Handle window resize - improved stability
+
+  const validArtworks = allArtworks.filter((a) => getUrl(a));
+
+  // Fetch remaining artworks
   useEffect(() => {
-    let resizeTimeout;
-    
-    const handleResize = () => {
-      // Clear any existing timeout
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
-      }
-      
-      // Debounce the resize handling
-      resizeTimeout = setTimeout(() => {
-        // Only recalculate if we have valid images and they're loaded
-        if (imageA.src && imageA.width !== 'auto') {
-          setImageToContainer('A', imageA.src, true);
+    let cancelled = false;
+    (async () => {
+      if (!portfolioId) return;
+      try {
+        const res = await fetch(`/api/artworks/${portfolioId}`);
+        const data = await res.json();
+        const more = (data?.artworks || []).filter((a) => getUrl(a));
+        if (!cancelled && more.length) {
+          setAllArtworks((prev) => [...prev, ...more]);
         }
-        if (imageB.src && imageB.width !== 'auto') {
-          setImageToContainer('B', imageB.src, true);
-        }
-      }, 200); // Increased debounce time
-    };
-    
-    window.addEventListener('resize', handleResize, { passive: true });
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
+      } catch (e) {
+        console.error("Error fetching remaining artworks:", e);
       }
-    };
-  }, []); // Remove dependencies to avoid re-adding listeners
-  
-  // Start slideshow
-  const startSlideshow = async () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    
-    const artwork = validArtworks[currentIndex];
-    if (!artwork) {
-      setIsRunning(false);
-      return;
+    })();
+    return () => { cancelled = true; };
+  }, [portfolioId]);
+
+  // First image — identical choreography to crossfades
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (firstImageReady || validArtworks.length === 0) return;
+      const url = getUrl(validArtworks[0]);
+      try { await preload(url); } catch (_) {}
+      if (cancelled) return;
+
+      // mount hidden & blurred
+      setLayerA({ src: url, opacity: 0, blur: 1 });
+      setLayerB({ src: "", opacity: 0, blur: 1 });
+      setIsAActive(true);
+      setIdx(0);
+      setFirstImageReady(true);
+
+      // start fade & unblur on the same cadence as crossfades
+      requestAnimationFrame(() => {
+        setLayerA((p) => ({ ...p, opacity: 1 }));
+        if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = setTimeout(() => {
+          setLayerA((p) => ({ ...p, blur: 0 }));
+        }, UNBLUR_DELAY_MS);
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [validArtworks.length, firstImageReady]);
+
+  const crossfade = async () => {
+    if (validArtworks.length <= 1) return;
+
+    const current = idxRef.current;
+    const nextIndex = (current + 1) % validArtworks.length;
+    const nextSrc = getUrl(validArtworks[nextIndex]);
+
+    try { await preload(nextSrc); } catch (_) {}
+
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+
+    if (isAActiveRef.current) {
+      // incoming on B
+      setLayerB({ src: nextSrc, opacity: 0, blur: 1 });
+      requestAnimationFrame(() => {
+        setLayerA((p) => ({ ...p, opacity: 0, blur: 1 })); // fade out + slight blur
+        setLayerB((p) => ({ ...p, opacity: 1 }));          // fade in
+        blurTimeoutRef.current = setTimeout(() => {
+          setLayerB((p) => ({ ...p, blur: 0 }));           // clear blur early
+        }, UNBLUR_DELAY_MS);
+      });
+      setIsAActive(false);
+    } else {
+      // incoming on A
+      setLayerA({ src: nextSrc, opacity: 0, blur: 1 });
+      requestAnimationFrame(() => {
+        setLayerB((p) => ({ ...p, opacity: 0, blur: 1 }));
+        setLayerA((p) => ({ ...p, opacity: 1 }));
+        blurTimeoutRef.current = setTimeout(() => {
+          setLayerA((p) => ({ ...p, blur: 0 }));
+        }, UNBLUR_DELAY_MS);
+      });
+      setIsAActive(true);
     }
-    
-    // Set current image to active container
-    await setImageToContainer(activeContainer, artwork.image.asset.url);
-    
-    // Add a delay before starting fade in
-    setTimeout(() => {
-      // Fade in active container
-      if (activeContainer === 'A') {
-        setImageA(prev => ({ ...prev, opacity: '1', filter: 'blur(0px)' }));
-      } else {
-        setImageB(prev => ({ ...prev, opacity: '1', filter: 'blur(0px)' }));
-      }
-      
-      // If only one image, we're done
-      if (validArtworks.length <= 1) {
-        setIsRunning(false);
-        return;
-      }
-      
-      // Schedule transition to next image
-      addTimeout(async () => {
-        // Get next image
-        const nextIndex = (currentIndex + 1) % validArtworks.length;
-        const nextArtwork = validArtworks[nextIndex];
-        
-        // Set next image to inactive container
-        const inactiveContainer = activeContainer === 'A' ? 'B' : 'A';
-        await setImageToContainer(inactiveContainer, nextArtwork.image.asset.url);
-        
-        // Start fading out active container
-        if (activeContainer === 'A') {
-          setImageA(prev => ({ ...prev, opacity: '0', filter: 'blur(10px)' }));
-        } else {
-          setImageB(prev => ({ ...prev, opacity: '0', filter: 'blur(10px)' }));
-        }
-        
-        // Start fading in the next image after a short delay
-        addTimeout(() => {
-          if (inactiveContainer === 'A') {
-            setImageA(prev => ({ ...prev, opacity: '1', filter: 'blur(0px)' }));
-          } else {
-            setImageB(prev => ({ ...prev, opacity: '1', filter: 'blur(0px)' }));
-          }
-          
-          // After fade in completes, update state for next cycle
-          addTimeout(() => {
-            setCurrentIndex(nextIndex);
-            setActiveContainer(inactiveContainer);
-            setIsRunning(false);
-          }, 2000); // Fade in time
-        }, 300); // 300ms overlap
-      }, 3200); // Display time
-    }, 50); // Small delay for initial transition
+
+    setIdx(nextIndex);
+
+    // schedule next crossfade after fade + hold
+    timeoutRef.current = setTimeout(() => {
+      crossfade();
+    }, FADE_MS + SHARP_HOLD_MS);
   };
-  
-  // Start slideshow when ready and not running
+
+  // Start/stop slideshow with visibility handling
   useEffect(() => {
-    if (validArtworks.length > 0 && !isRunning) {
-      const timer = setTimeout(() => {
-        startSlideshow();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [validArtworks.length, currentIndex, isRunning]);
-  
-  // Handle visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        clearAllTimeouts();
-        setIsRunning(false);
-        
-        setTimeout(() => {
-          if (validArtworks.length > 0) {
-            startSlideshow();
-          }
-        }, 100);
-      } else {
-        clearAllTimeouts();
-        setIsRunning(false);
+    if (!firstImageReady || validArtworks.length <= 1) return;
+
+    const start = () => {
+      if (!timeoutRef.current) {
+        timeoutRef.current = setTimeout(() => {
+          crossfade();
+        }, FADE_MS + SHARP_HOLD_MS);
       }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const stop = () => {
+      clearTimers();
+    };
+
+    const onVis = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    start();
+    document.addEventListener("visibilitychange", onVis);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearAllTimeouts();
+      document.removeEventListener("visibilitychange", onVis);
+      clearTimers();
     };
-  }, [validArtworks.length]);
-  
-  // Handle window focus
-  useEffect(() => {
-    const handleFocus = () => {
-      if (!isRunning && validArtworks.length > 0) {
-        clearAllTimeouts();
-        setTimeout(() => {
-          startSlideshow();
-        }, 100);
-      }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [isRunning, validArtworks.length]);
-  
+  }, [firstImageReady, validArtworks.length]);
+
+  if (!validArtworks.length) return <div>No images available</div>;
+
   return (
     <div className={styles.container}>
-      {!validArtworks.length && <div>No images available</div>}
-      
-      {/* Image Container A */}
-      <div className={styles.imageContainer} style={{ position: 'relative' }}>
+      <div className={styles.imageContainer}>
+        {/* Layer A */}
         <div
           className={styles.artwork}
           style={{
-            opacity: imageA.opacity,
-            transition: 'opacity 2s ease-in, filter 2s ease-in',
-            position: 'absolute',
-            filter: imageA.filter,
-            width: imageA.width,
-            height: imageA.height,
+            opacity: layerA.opacity,
+            filter: layerA.blur ? `blur(${MAX_BLUR_PX}px)` : "blur(0px)",
+            transition: `opacity ${FADE_MS}ms ${OPACITY_EASE}, filter ${UNBLUR_MS}ms ${FILTER_EASE}`,
           }}
         >
-          {imageA.src && (
+          {layerA.src && (
             <img
-              src={imageA.src}
+              src={layerA.src}
               alt="Artwork"
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                maxWidth: "90vw",
+                maxHeight: "80vh",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
               }}
             />
           )}
         </div>
-      </div>
-      
-      {/* Image Container B */}
-      <div className={styles.imageContainer} style={{ position: 'relative' }}>
-        <div
-          className={styles.artwork}
-          style={{
-            opacity: imageB.opacity,
-            transition: 'opacity 2s ease-in, filter 2s ease-in',
-            position: 'absolute',
-            filter: imageB.filter,
-            width: imageB.width,
-            height: imageB.height,
-          }}
-        >
-          {imageB.src && (
-            <img
-              src={imageB.src}
-              alt="Artwork"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          )}
-        </div>
-      </div>
-      
 
+        {/* Layer B */}
+        <div
+          className={styles.artwork}
+          style={{
+            opacity: layerB.opacity,
+            filter: layerB.blur ? `blur(${MAX_BLUR_PX}px)` : "blur(0px)",
+            transition: `opacity ${FADE_MS}ms ${OPACITY_EASE}, filter ${UNBLUR_MS}ms ${FILTER_EASE}`,
+          }}
+        >
+          {layerB.src && (
+            <img
+              src={layerB.src}
+              alt="Artwork"
+              style={{
+                maxWidth: "90vw",
+                maxHeight: "80vh",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

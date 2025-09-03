@@ -36,3 +36,25 @@
   padding: 0 20px;
   will-change: opacity; /* Optimize for animation performance */
 }
+
+.slideshowContainer {
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slideImage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artwork {
+  /* …your existing rules… */
+  will-change: opacity, filter;
+}
