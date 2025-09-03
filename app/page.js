@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 // Better metadata for performance and SEO
 export const metadata = {
-  title: 'Portfolio - Featured Artworks',
+  title: 'Raj Gupta',
   description: 'Explore featured artworks and portfolios',
   robots: 'index, follow',
 };
