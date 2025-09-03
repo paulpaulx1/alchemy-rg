@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
     
     const remainingData = await client.fetch(`
       *[_type == "portfolio" && _id == $portfolioId][0] {
-        "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) [1...20] {
+        "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) [1...10] {
           _id,
           title,
           displayTitle,

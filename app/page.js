@@ -2,6 +2,54 @@ import { client } from '@/lib/client';
 import FeaturedPortfolio from '../components/FeaturedPortfolio';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { headers } from 'next/headers';
+
+// Helper to optimize image URL with minimal compression
+function optimizeImageUrl(url, userAgent = '') {
+  if (!url) return url;
+  
+  // Extract dimensions from Sanity URL if available (format: widthxheight)
+  const dimensionMatch = url.match(/-(\d+)x(\d+)\./);
+  let originalWidth, originalHeight;
+  
+  if (dimensionMatch) {
+    originalWidth = parseInt(dimensionMatch[1]);
+    originalHeight = parseInt(dimensionMatch[2]);
+  }
+  
+  // If we can estimate the file size, apply minimal compression
+  if (originalWidth && originalHeight) {
+    // Rough estimate: assume ~3 bytes per pixel for JPEG
+    const estimatedSize = (originalWidth * originalHeight * 3) / 1024; // KB
+    
+    // Only compress if estimated size > 500KB
+    if (estimatedSize > 500) {
+      // Use minimal compression - just enough to get under 500KB
+      // Start with high quality and only resize if absolutely necessary
+      let quality = 95; // Very high quality
+      let targetWidth = originalWidth;
+      let targetHeight = originalHeight;
+      
+      // If image is very large, resize slightly but keep quality high
+      if (originalWidth > 2000 || originalHeight > 2000) {
+        const maxDimension = 1800;
+        if (originalWidth > originalHeight) {
+          targetWidth = maxDimension;
+          targetHeight = Math.round((originalHeight * maxDimension) / originalWidth);
+        } else {
+          targetHeight = maxDimension;
+          targetWidth = Math.round((originalWidth * maxDimension) / originalHeight);
+        }
+        quality = 92; // Still very high
+      }
+      
+      return `${url}?w=${targetWidth}&h=${targetHeight}&fit=max&auto=format&q=${quality}`;
+    }
+  }
+  
+  // For images we can't estimate or are likely under 500KB, just add format optimization
+  return `${url}?auto=format&q=95`;
+}
 
 // Better metadata for performance and SEO
 export const metadata = {
@@ -34,6 +82,10 @@ function HomePage() {
 
 export default async function Home() {
   try {
+    // Get user agent for device detection
+    const headersList = headers();
+    const userAgent = headersList.get('user-agent') || '';
+    
     // Get the first artwork WITHOUT forced dimensions
     const featuredPortfolio = await client.fetch(`
       *[_type == "portfolio" && featured == true][0] {
@@ -126,12 +178,12 @@ export default async function Home() {
       );
     }
 
-    // Prepare artwork data with original URLs
+    // Prepare artwork data with OPTIMIZED URL
     const optimizedArtwork = {
       ...featuredPortfolio.firstArtwork,
       image: {
         asset: {
-          url: thumbnailUrl
+          url: optimizeImageUrl(thumbnailUrl, userAgent) // Apply compression here!
         }
       }
     };
