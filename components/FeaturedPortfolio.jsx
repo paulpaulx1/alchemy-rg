@@ -3,47 +3,51 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./FeaturedPortfolio.module.css";
 
-// “meet-in-the-middle” timings
-const FADE_MS = 3000;                 // unified crossfade duration
-const UNBLUR_DELAY_MS = 250;          // start unblurring shortly after fade starts
-const UNBLUR_MS = 1700;               // blur clears well before fade ends
-const SHARP_HOLD_MS = 2500;           // fully sharp time between fades
+// timings (meet-in-the-middle)
+const FADE_MS = 3000;          // identical duration for first + subsequent fades
+const SHARP_HOLD_MS = 2000;    // time an image stays fully sharp
+const MAX_BLUR_PX = 5;         // keep blur light so it never feels mushy
+const OPACITY_EASE = "linear"; // film-like dissolve (very even)
+const FILTER_EASE  = "ease-out";
 
-// easing
-const OPACITY_EASE = "cubic-bezier(0.45, 0, 0.55, 1)";
-const FILTER_EASE  = "ease-out";      // clears blur steadily, not poppy
-const MAX_BLUR_PX = 5;                // lighter blur so mid-blur never lingers
+// keyframes helpers
+const inKeyframes = (maxBlur) => ([
+  { opacity: 0, filter: `blur(${maxBlur}px)` },
+  { opacity: 1, filter: "blur(0px)" }
+]);
+const outKeyframes = (maxBlur) => ([
+  { opacity: 1, filter: "blur(0px)" },
+  { opacity: 0, filter: `blur(${maxBlur}px)` }
+]);
+
+const animOpts = { duration: FADE_MS, easing: OPACITY_EASE, fill: "forwards" };
+const filterOpts = { duration: FADE_MS * 0.75, easing: FILTER_EASE, fill: "forwards" }; // blur clears a bit faster
 
 export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
   const [allArtworks, setAllArtworks] = useState([firstArtwork]);
-  const [firstImageReady, setFirstImageReady] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [idx, setIdx] = useState(0);
   const [isAActive, setIsAActive] = useState(true);
 
-  const [layerA, setLayerA] = useState({ src: "", opacity: 0, blur: 1 });
-  const [layerB, setLayerB] = useState({ src: "", opacity: 0, blur: 1 });
-
+  const layerARef = useRef(null);
+  const layerBRef = useRef(null);
   const timeoutRef = useRef(null);
-  const blurTimeoutRef = useRef(null);
 
-  // keep latest values for timers
+  // latest refs for timers
   const idxRef = useRef(idx);
   const isAActiveRef = useRef(isAActive);
   useEffect(() => { idxRef.current = idx; }, [idx]);
   useEffect(() => { isAActiveRef.current = isAActive; }, [isAActive]);
 
-  const clearTimers = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = null;
-    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-    blurTimeoutRef.current = null;
-  };
+  const clearTimer = () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); timeoutRef.current = null; };
 
   const getUrl = (art) =>
     art?.image?.asset?.optimizedUrl ||
     (art?.image?.asset?.url
       ? `${art.image.asset.url}?w=1200&h=800&fit=max&auto=format&q=75`
       : "");
+
+  const validArtworks = allArtworks.filter((a) => getUrl(a));
 
   const preload = (url) =>
     new Promise((resolve, reject) => {
@@ -55,8 +59,6 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
       if (img.decode) img.decode().then(resolve).catch(() => resolve());
     });
 
-  const validArtworks = allArtworks.filter((a) => getUrl(a));
-
   // Fetch remaining artworks
   useEffect(() => {
     let cancelled = false;
@@ -66,9 +68,7 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
         const res = await fetch(`/api/artworks/${portfolioId}`);
         const data = await res.json();
         const more = (data?.artworks || []).filter((a) => getUrl(a));
-        if (!cancelled && more.length) {
-          setAllArtworks((prev) => [...prev, ...more]);
-        }
+        if (!cancelled && more.length) setAllArtworks((p) => [...p, ...more]);
       } catch (e) {
         console.error("Error fetching remaining artworks:", e);
       }
@@ -76,36 +76,115 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     return () => { cancelled = true; };
   }, [portfolioId]);
 
-  // First image — identical choreography to crossfades
+  // ---- Safe img setter: hide layer if src missing/broken; show only when loaded ----
+  const setLayerSrc = (el, src) => {
+    if (!el) return;
+    const img = el.querySelector("img");
+    if (!img) return;
+
+    // Always start hidden; we'll reveal on successful load
+    el.style.visibility = "hidden";
+
+    // Clear previous handlers
+    img.onload = null;
+    img.onerror = null;
+
+    if (!src) {
+      // No src → remove it to avoid broken icon/alt text
+      img.removeAttribute("src");
+      return;
+    }
+
+    img.onload = () => {
+      el.style.visibility = "visible";
+      // cleanup
+      img.onload = null;
+      img.onerror = null;
+    };
+    img.onerror = () => {
+      // Hide layer & clear src on error (no broken badge / alt text)
+      el.style.visibility = "hidden";
+      img.removeAttribute("src");
+      img.onload = null;
+      img.onerror = null;
+    };
+
+    // Set src AFTER handlers are in place
+    if (img.getAttribute("src") !== src) {
+      img.setAttribute("src", src);
+    } else {
+      // If same src (from preload cache), force visible
+      el.style.visibility = "visible";
+    }
+  };
+
+  // Run one dissolve where both layers animate with identical timing
+  const runDissolve = async ({ incomingEl, outgoingEl }) => {
+    // ensure starting styles
+    incomingEl.style.opacity = "0";
+    incomingEl.style.filter = `blur(${MAX_BLUR_PX}px)`;
+    outgoingEl.style.opacity = "1";
+    outgoingEl.style.filter = "blur(0px)";
+
+    // animate opacity + blur (same timing for both initial + subsequent)
+    const inAnim = incomingEl.animate(inKeyframes(MAX_BLUR_PX), animOpts);
+    const inFilter = incomingEl.animate(inKeyframes(MAX_BLUR_PX), filterOpts);
+
+    const outAnim = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), animOpts);
+    const outFilter = outgoingEl.animate(outKeyframes(MAX_BLUR_PX), filterOpts);
+
+    // wait for opacity animations to finish
+    await Promise.all([
+      inAnim.finished.catch(() => {}),
+      outAnim.finished.catch(() => {}),
+    ]);
+
+    // snap final state
+    incomingEl.style.opacity = "1";
+    incomingEl.style.filter = "blur(0px)";
+    outgoingEl.style.opacity = "0";
+    outgoingEl.style.filter = `blur(${MAX_BLUR_PX}px)`;
+  };
+
+  // First paint: fade in first artwork with the same dissolve as later
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (firstImageReady || validArtworks.length === 0) return;
-      const url = getUrl(validArtworks[0]);
-      try { await preload(url); } catch (_) {}
+      if (initialized || validArtworks.length === 0 || !layerARef.current || !layerBRef.current) return;
+
+      const firstUrl = getUrl(validArtworks[0]);
+      try { await preload(firstUrl); } catch (_) {}
       if (cancelled) return;
 
-      // mount hidden & blurred
-      setLayerA({ src: url, opacity: 0, blur: 1 });
-      setLayerB({ src: "", opacity: 0, blur: 1 });
-      setIsAActive(true);
-      setIdx(0);
-      setFirstImageReady(true);
+      // set sources
+      setLayerSrc(layerARef.current, firstUrl);
+      setLayerSrc(layerBRef.current, null); // hidden, no src
 
-      // start fade & unblur on the same cadence as crossfades
-      requestAnimationFrame(() => {
-        setLayerA((p) => ({ ...p, opacity: 1 }));
-        if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-        blurTimeoutRef.current = setTimeout(() => {
-          setLayerA((p) => ({ ...p, blur: 0 }));
-        }, UNBLUR_DELAY_MS);
+      // start with A hidden/blurred, B hidden
+      layerARef.current.style.opacity = "0";
+      layerARef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
+      layerBRef.current.style.opacity = "0";
+      layerBRef.current.style.filter = `blur(${MAX_BLUR_PX}px)`;
+
+      // dissolve A in (B acts as outgoing but stays invisible)
+      await runDissolve({
+        incomingEl: layerARef.current,
+        outgoingEl: layerBRef.current,
       });
+
+      setIdx(0);
+      setIsAActive(true);
+      setInitialized(true);
+
+      // schedule next fade
+      timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
     })();
-    return () => { cancelled = true; };
-  }, [validArtworks.length, firstImageReady]);
+
+    return () => { cancelled = true; clearTimer(); };
+  }, [initialized, validArtworks.length]);
 
   const crossfade = async () => {
-    if (validArtworks.length <= 1) return;
+    if (validArtworks.length <= 1 || !layerARef.current || !layerBRef.current) return;
 
     const current = idxRef.current;
     const nextIndex = (current + 1) % validArtworks.length;
@@ -113,68 +192,35 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
 
     try { await preload(nextSrc); } catch (_) {}
 
-    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    const incomingEl = isAActiveRef.current ? layerBRef.current : layerARef.current;
+    const outgoingEl = isAActiveRef.current ? layerARef.current : layerBRef.current;
 
-    if (isAActiveRef.current) {
-      // incoming on B
-      setLayerB({ src: nextSrc, opacity: 0, blur: 1 });
-      requestAnimationFrame(() => {
-        setLayerA((p) => ({ ...p, opacity: 0, blur: 1 })); // fade out + slight blur
-        setLayerB((p) => ({ ...p, opacity: 1 }));          // fade in
-        blurTimeoutRef.current = setTimeout(() => {
-          setLayerB((p) => ({ ...p, blur: 0 }));           // clear blur early
-        }, UNBLUR_DELAY_MS);
-      });
-      setIsAActive(false);
-    } else {
-      // incoming on A
-      setLayerA({ src: nextSrc, opacity: 0, blur: 1 });
-      requestAnimationFrame(() => {
-        setLayerB((p) => ({ ...p, opacity: 0, blur: 1 }));
-        setLayerA((p) => ({ ...p, opacity: 1 }));
-        blurTimeoutRef.current = setTimeout(() => {
-          setLayerA((p) => ({ ...p, blur: 0 }));
-        }, UNBLUR_DELAY_MS);
-      });
-      setIsAActive(true);
-    }
+    // set incoming src before animating (layer stays invisible until loaded)
+    setLayerSrc(incomingEl, nextSrc);
 
+    await runDissolve({ incomingEl, outgoingEl });
+
+    // flip active layer + index
+    setIsAActive((v) => !v);
     setIdx(nextIndex);
 
-    // schedule next crossfade after fade + hold
-    timeoutRef.current = setTimeout(() => {
-      crossfade();
-    }, FADE_MS + SHARP_HOLD_MS);
+    // schedule next crossfade (hold time only; fade time already elapsed)
+    clearTimer();
+    timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
   };
 
-  // Start/stop slideshow with visibility handling
+  // Pause/resume on visibility change
   useEffect(() => {
-    if (!firstImageReady || validArtworks.length <= 1) return;
-
-    const start = () => {
-      if (!timeoutRef.current) {
-        timeoutRef.current = setTimeout(() => {
-          crossfade();
-        }, FADE_MS + SHARP_HOLD_MS);
+    const onVis = () => {
+      if (document.hidden) clearTimer();
+      else if (initialized) {
+        clearTimer();
+        timeoutRef.current = setTimeout(() => { void crossfade(); }, SHARP_HOLD_MS);
       }
     };
-
-    const stop = () => {
-      clearTimers();
-    };
-
-    const onVis = () => {
-      if (document.hidden) stop();
-      else start();
-    };
-
-    start();
     document.addEventListener("visibilitychange", onVis);
-    return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      clearTimers();
-    };
-  }, [firstImageReady, validArtworks.length]);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [initialized]);
 
   if (!validArtworks.length) return <div>No images available</div>;
 
@@ -182,51 +228,33 @@ export default function FeaturedPortfolio({ portfolioId, firstArtwork }) {
     <div className={styles.container}>
       <div className={styles.imageContainer}>
         {/* Layer A */}
-        <div
-          className={styles.artwork}
-          style={{
-            opacity: layerA.opacity,
-            filter: layerA.blur ? `blur(${MAX_BLUR_PX}px)` : "blur(0px)",
-            transition: `opacity ${FADE_MS}ms ${OPACITY_EASE}, filter ${UNBLUR_MS}ms ${FILTER_EASE}`,
-          }}
-        >
-          {layerA.src && (
-            <img
-              src={layerA.src}
-              alt="Artwork"
-              style={{
-                maxWidth: "90vw",
-                maxHeight: "80vh",
-                width: "auto",
-                height: "auto",
-                objectFit: "contain",
-              }}
-            />
-          )}
+        <div ref={layerARef} className={styles.artwork} style={{ visibility: "hidden" }}>
+          <img
+            alt="Artwork A"
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "80vh",
+              width: "auto",
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
         </div>
 
         {/* Layer B */}
-        <div
-          className={styles.artwork}
-          style={{
-            opacity: layerB.opacity,
-            filter: layerB.blur ? `blur(${MAX_BLUR_PX}px)` : "blur(0px)",
-            transition: `opacity ${FADE_MS}ms ${OPACITY_EASE}, filter ${UNBLUR_MS}ms ${FILTER_EASE}`,
-          }}
-        >
-          {layerB.src && (
-            <img
-              src={layerB.src}
-              alt="Artwork"
-              style={{
-                maxWidth: "90vw",
-                maxHeight: "80vh",
-                width: "auto",
-                height: "auto",
-                objectFit: "contain",
-              }}
-            />
-          )}
+        <div ref={layerBRef} className={styles.artwork} style={{ visibility: "hidden" }}>
+          <img
+            alt="Artwork B"
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "80vh",
+              width: "auto",
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
         </div>
       </div>
     </div>
