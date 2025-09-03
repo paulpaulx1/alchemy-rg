@@ -131,7 +131,7 @@ export default async function ArtworkPage({ params }) {
     switch (artwork.mediaType) {
       case "image":
         const imageUrl = artwork.lowResImageUrl || artwork.imageUrl;
-        const finalUrl = imageUrl ? `${imageUrl}?auto=format&q=85` : null;
+        const finalUrl = imageUrl ? `${imageUrl}` : null;
         
         return finalUrl ? (
           <ResponsiveArtworkImage
