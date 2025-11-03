@@ -5,48 +5,42 @@ import styles from "./About.module.css";
 import ImageSection from "./ImageSection"; // We'll create this as a separate client component
 
 export default async function AboutPage() {
-  const artist = await client.fetch(`
-    *[_type == "artist"][0] {
-      name,
-      "profileImageUrl": profileImage.asset->url,
-      "additionalImages": additionalImages[]{
-        "url": asset->url,
-        alt
-      },
-      bio,
-      email,
-      website,
-      socialMedia,
-      "cvUrl": cv.asset->url
-    }
-  `);  
+  const artist = await client.fetch(
+    `
+      *[_type == "artist"][0] {
+        name,
+        "profileImageUrl": profileImage.asset->url,
+        "additionalImages": additionalImages[]{
+          "url": asset->url,
+          alt
+        },
+        bio,
+        email,
+        website,
+        socialMedia,
+        "cvUrl": cv.asset->url
+      }
+    `,
+    {},
+    { next: { revalidate: 604800, tags: ["sanity"] } } // ✅ ISR tag + cache time
+  );
 
   const portableTextComponents = {
     block: {
-      normal: ({children}) => <p className={styles.bioParagraph}>{children}</p>,
+      normal: ({ children }) => (
+        <p className={styles.bioParagraph}>{children}</p>
+      ),
     },
     list: {
-      bullet: ({ children }) => (
-        <ul className={styles.bioList}>
-          {children}
-        </ul>
-      ),
-      number: ({ children }) => (
-        <ol className={styles.bioList}>
-          {children}
-        </ol>
-      ),
+      bullet: ({ children }) => <ul className={styles.bioList}>{children}</ul>,
+      number: ({ children }) => <ol className={styles.bioList}>{children}</ol>,
     },
     listItem: {
       bullet: ({ children }) => (
-        <li className={styles.bioListItem}>
-          {children}
-        </li>
+        <li className={styles.bioListItem}>{children}</li>
       ),
       number: ({ children }) => (
-        <li className={styles.bioListItem}>
-          {children}
-        </li>
+        <li className={styles.bioListItem}>{children}</li>
       ),
     },
   };
@@ -65,7 +59,7 @@ export default async function AboutPage() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <ImageSection 
+        <ImageSection
           mainImage={artist.profileImageUrl}
           additionalImages={artist.additionalImages}
           artistName={artist.name}
@@ -171,4 +165,4 @@ export default async function AboutPage() {
   );
 }
 
-export const revalidate = 60;
+export const revalidate = 604800;

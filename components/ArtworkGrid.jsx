@@ -110,7 +110,7 @@ export default function ArtworkGrid({
           <>
             {artwork.pdfThumbnailUrl ? (
               <div className={styles.pdfThumbnail}>
-                <Image
+                <img
                   src={artwork.imageUrl}
                   alt={artwork.title}
                   width={600}

@@ -23,9 +23,10 @@ export async function generateStaticParams() {
     artworkSlug: artwork.slug,
   }));
 }
+// Faster caching for artwork pages
+export const revalidate = 604800; // 7 days
 
-// Enhanced query to get ALL portfolio artworks with full data
-async function getPortfolioWithArtworks(portfolioSlug, artworkSlug) {
+async function getPortfolioWithArtworks(portfolioSlug) {
   return await client.fetch(
     `
     *[_type == "portfolio" && slug.current == $portfolioSlug][0] {
@@ -63,20 +64,23 @@ async function getPortfolioWithArtworks(portfolioSlug, artworkSlug) {
       }
     }
   `,
-    { portfolioSlug }
+    { portfolioSlug },
+    { next: { revalidate: 604800, tags: ["sanity"] } } // ✅ enable ISR caching
   );
 }
 
 // Helper function to get embed URL from video links
 function getEmbedUrl(url) {
-  const youtubeRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const youtubeRegex =
+    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const youtubeMatch = url.match(youtubeRegex);
 
   if (youtubeMatch && youtubeMatch[2].length === 11) {
     return `https://www.youtube.com/embed/${youtubeMatch[2]}`;
   }
 
-  const vimeoRegex = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
+  const vimeoRegex =
+    /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
   const vimeoMatch = url.match(vimeoRegex);
 
   if (vimeoMatch && vimeoMatch[5]) {
@@ -87,14 +91,16 @@ function getEmbedUrl(url) {
 }
 
 // Faster caching for artwork pages
-export const revalidate = 600; // 10 minutes
 
 export default async function ArtworkPage({ params }) {
   // In App Router, params is already resolved - no need to await
   const { slug: portfolioSlug, artworkSlug } = params;
 
   // Get all portfolio data including all artworks
-  const portfolioData = await getPortfolioWithArtworks(portfolioSlug, artworkSlug);
+  const portfolioData = await getPortfolioWithArtworks(
+    portfolioSlug,
+    artworkSlug
+  );
 
   if (!portfolioData || !portfolioData.artworks) {
     return (
@@ -106,8 +112,10 @@ export default async function ArtworkPage({ params }) {
   }
 
   // Find the current artwork
-  const currentArtwork = portfolioData.artworks.find(a => a.slug === artworkSlug);
-  
+  const currentArtwork = portfolioData.artworks.find(
+    (a) => a.slug === artworkSlug
+  );
+
   if (!currentArtwork) {
     return (
       <div>
@@ -118,13 +126,17 @@ export default async function ArtworkPage({ params }) {
   }
 
   // Get navigation artworks
-  const currentIndex = portfolioData.artworks.findIndex(a => a.slug === artworkSlug);
-  const prevArtwork = currentIndex > 0 
-    ? portfolioData.artworks[currentIndex - 1] 
-    : portfolioData.artworks[portfolioData.artworks.length - 1];
-  const nextArtwork = currentIndex < portfolioData.artworks.length - 1 
-    ? portfolioData.artworks[currentIndex + 1] 
-    : portfolioData.artworks[0];
+  const currentIndex = portfolioData.artworks.findIndex(
+    (a) => a.slug === artworkSlug
+  );
+  const prevArtwork =
+    currentIndex > 0
+      ? portfolioData.artworks[currentIndex - 1]
+      : portfolioData.artworks[portfolioData.artworks.length - 1];
+  const nextArtwork =
+    currentIndex < portfolioData.artworks.length - 1
+      ? portfolioData.artworks[currentIndex + 1]
+      : portfolioData.artworks[0];
 
   // Render artwork based on type
   function renderArtworkDisplay(artwork) {
@@ -132,7 +144,7 @@ export default async function ArtworkPage({ params }) {
       case "image":
         const imageUrl = artwork.lowResImageUrl || artwork.imageUrl;
         const finalUrl = imageUrl ? `${imageUrl}` : null;
-        
+
         return finalUrl ? (
           <ResponsiveArtworkImage
             src={finalUrl}
@@ -143,12 +155,12 @@ export default async function ArtworkPage({ params }) {
         ) : (
           <div className={styles.noImage}>No image available</div>
         );
-        
+
       case "video":
-        const videoThumbnail = artwork.videoThumbnailUrl 
+        const videoThumbnail = artwork.videoThumbnailUrl
           ? `${artwork.videoThumbnailUrl}?auto=format&q=75`
           : null;
-          
+
         return (
           <div className={styles.videoContainer}>
             {artwork.muxPlaybackId ? (
@@ -184,14 +196,14 @@ export default async function ArtworkPage({ params }) {
             )}
           </div>
         );
-        
+
       case "pdf":
         return (
           <Suspense fallback={<div className={styles.skeletonPdf}></div>}>
             <PdfViewer artwork={artwork} />
           </Suspense>
         );
-        
+
       case "audio":
         return (
           <div className={styles.audioContainer}>
@@ -207,7 +219,7 @@ export default async function ArtworkPage({ params }) {
             )}
           </div>
         );
-        
+
       default:
         return <div>Unsupported media type</div>;
     }
@@ -278,7 +290,9 @@ export default async function ArtworkPage({ params }) {
                 <p className={styles.artworkMedium}>{currentArtwork.medium}</p>
               )}
               {currentArtwork.dimensions && (
-                <p className={styles.artworkDimensions}>{currentArtwork.dimensions}</p>
+                <p className={styles.artworkDimensions}>
+                  {currentArtwork.dimensions}
+                </p>
               )}
             </div>
 
@@ -297,7 +311,7 @@ export default async function ArtworkPage({ params }) {
           </Link>
         </div>
       </div>
-      
+
       {/* Keyboard Navigation */}
       <ArtworkNavigation
         prevUrl={`/portfolio/${portfolioData.slug}/${prevArtwork.slug}`}
