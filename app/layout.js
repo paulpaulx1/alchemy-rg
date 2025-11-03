@@ -1,114 +1,108 @@
 // app/layout.js
-import Link from 'next/link';
-import './globals.css';
-import NavigationMenu from '../components/NavigationMenu';
-import { client } from '@/lib/client';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import Link from "next/link";
+import "./globals.css";
+import NavigationMenu from "../components/NavigationMenu";
+import { client } from "@/lib/client";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
+// 🔹 Metadata for SEO
 export const metadata = {
-  title: 'Raj Gupta | Artist',
-  description: 'The artistic works of Raj Gupta',
+  title: "Raj Gupta | Artist",
+  description: "The artistic works of Raj Gupta",
 };
 
-// Build portfolio tree from flat data
+// 🔹 Enable ISR and static generation globally
+export const dynamic = "force-static";
+export const revalidate = 604800; // 7 days (refreshed by webhook instantly)
+
+// ---------------------------------------------------------
+// 🧠 Helpers
+// ---------------------------------------------------------
+
+// Build nested portfolio tree
 function buildPortfolioTree(portfolios) {
   const portfolioMap = {};
   const rootPortfolios = [];
 
-  // First pass: map all portfolios by ID
-  portfolios.forEach((portfolio) => {
-    portfolioMap[portfolio._id] = {
-      ...portfolio,
-      subPortfolios: [],
-    };
+  portfolios.forEach((p) => {
+    portfolioMap[p._id] = { ...p, subPortfolios: [] };
   });
 
-  // Second pass: build the tree structure
-  portfolios.forEach((portfolio) => {
-    if (portfolio.parentId) {
-      // This is a child portfolio, add it to its parent
-      if (portfolioMap[portfolio.parentId]) {
-        portfolioMap[portfolio.parentId].subPortfolios.push(
-          portfolioMap[portfolio._id]
-        );
-      }
+  portfolios.forEach((p) => {
+    if (p.parentId && portfolioMap[p.parentId]) {
+      portfolioMap[p.parentId].subPortfolios.push(portfolioMap[p._id]);
     } else {
-      // This is a root portfolio
-      rootPortfolios.push(portfolioMap[portfolio._id]);
+      rootPortfolios.push(portfolioMap[p._id]);
     }
   });
+
   return rootPortfolios;
 }
 
-// Cache the site settings and navigation for better performance
-export const dynamic = 'force-dynamic';
-export const revalidate = 60; // Cache for 60 seconds instead of 0
-
+// Get site settings (with ISR tag)
 export async function getSiteSettings() {
-  // First try to get the active settings - but only fetch what we need
-  const activeSettings = await client.fetch(`
-    *[_type == "siteSettings" && isActive == true][0] {
+  const activeSettings = await client.fetch(
+    `*[_type == "siteSettings" && isActive == true][0] {
       backgroundColor,
       textColor,
       font
-    }
-  `);
+    }`,
+    {},
+    { next: { revalidate: 604800, tags: ["sanity"] } }
+  );
 
-  // If there's no active setting, fall back to the first one
-  if (!activeSettings) {
-    return client.fetch(`
-      *[_type == "siteSettings"][0] {
-        backgroundColor,
-        textColor,
-        font
-      }
-    `);
-  }
+  if (activeSettings) return activeSettings;
 
-  return activeSettings;
+  return client.fetch(
+    `*[_type == "siteSettings"][0] {
+      backgroundColor,
+      textColor,
+      font
+    }`,
+    {},
+    { next: { revalidate: 604800, tags: ["sanity"] } }
+  );
 }
 
-// Separate function to get navigation data with caching
+// Get navigation portfolios (with ISR tag)
 async function getNavigationData() {
-  // Only fetch essential navigation data
-  const portfolios = await client.fetch(`
-    *[_type == "portfolio"] | order(order asc) {
+  return client.fetch(
+    `*[_type == "portfolio"] | order(order asc) {
       _id,
       title,
       slug,
       order,
       "parentId": parentPortfolio._ref
-    }
-  `);
-
-  return portfolios;
+    }`,
+    {},
+    { next: { revalidate: 604800, tags: ["sanity"] } }
+  );
 }
 
+// ---------------------------------------------------------
+// 🧩 Root Layout
+// ---------------------------------------------------------
 export default async function RootLayout({ children }) {
-  // Fetch site settings and navigation data in parallel
   const [settings, allPortfolios] = await Promise.all([
     getSiteSettings(),
-    getNavigationData()
+    getNavigationData(),
   ]);
 
-  // Add an "About" item at the top level
+  // Add custom "About" nav item
   const aboutItem = {
-    _id: 'about-page',
-    title: 'About',
-    slug: { current: 'about' },
+    _id: "about-page",
+    title: "About",
+    slug: { current: "about" },
     subPortfolios: [],
     isCustomRoute: true,
   };
 
-  // Build the recursive tree structure
   const portfolioTree = buildPortfolioTree(allPortfolios);
-
-  // Add the About item at the beginning of the array
   const navItems = [aboutItem, ...portfolioTree];
 
-  // Create style tag content - removed cache busting
+  // Dynamic style injection from Sanity settings
   const createStyleTagContent = () => {
-    let styles = '';
+    let styles = "";
 
     if (settings?.backgroundColor?.hex) {
       styles += `
@@ -117,8 +111,7 @@ export default async function RootLayout({ children }) {
           background-color: ${settings.backgroundColor.hex} !important;
           background: ${settings.backgroundColor.hex} !important;
         }
-        
-        /* Override any other background properties */
+
         [style*="background"], [class*="background"], 
         [class*="bg-"], [style*="bg-"],
         [class*="container"], [class*="wrapper"],
@@ -131,7 +124,7 @@ export default async function RootLayout({ children }) {
 
     if (settings?.textColor?.hex) {
       styles += `
-        html, body, .site-wrapper, *, 
+        html, body, .site-wrapper, *,
         h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, option,
         a, a:visited, a:hover, a:active {
           color: ${settings.textColor.hex} !important;
@@ -142,7 +135,7 @@ export default async function RootLayout({ children }) {
     if (settings?.font) {
       const fontFamily = getFontFamily(settings.font);
       styles += `
-        html, body, .site-wrapper, *, 
+        html, body, .site-wrapper, *,
         h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, option {
           font-family: ${fontFamily} !important;
         }
@@ -152,41 +145,44 @@ export default async function RootLayout({ children }) {
     return styles;
   };
 
+  // ---------------------------------------------------------
+  // 🧱 Layout Structure
+  // ---------------------------------------------------------
   return (
-    <html lang='en'>
+    <html lang="en">
       <head>
-        {/* Load custom font if selected */}
-        {settings?.font && settings.font !== 'eb-garamond' && (
+        {/* Load selected Google font */}
+        {settings?.font && settings.font !== "eb-garamond" && (
           <link
             href={`https://fonts.googleapis.com/css2?family=${settings.font.replace(
-              '-',
-              '+'
+              "-",
+              "+"
             )}:wght@400;500;600&display=swap`}
-            rel='stylesheet'
+            rel="stylesheet"
           />
         )}
 
-        {/* Add the dynamic styles - removed cache buster */}
+        {/* Inject Sanity-based theme styles */}
         {settings && (
           <style
             dangerouslySetInnerHTML={{
-              __html: createStyleTagContent()
+              __html: createStyleTagContent(),
             }}
           />
         )}
 
-        {/* Removed aggressive cache prevention - allow normal browser caching */}
-        <meta httpEquiv='Cache-Control' content='public, max-age=300' />
+        {/* Allow moderate browser caching */}
+        <meta httpEquiv="Cache-Control" content="public, max-age=300" />
       </head>
       <body>
-        <div className='site-wrapper'>
-          <header className='site-header'>
-            <Link href='/about' className='site-title'>
+        <div className="site-wrapper">
+          <header className="site-header">
+            <Link href="/about" className="site-title">
               Raj Gupta
             </Link>
             <NavigationMenu portfolioNavItems={navItems} />
           </header>
-          <main className='site-main'>{children}</main>
+          <main className="site-main">{children}</main>
         </div>
         <SpeedInsights />
       </body>
@@ -194,54 +190,47 @@ export default async function RootLayout({ children }) {
   );
 }
 
-// Helper function to get font family
+// ---------------------------------------------------------
+// 🎨 Font resolver
+// ---------------------------------------------------------
 function getFontFamily(fontValue) {
   switch (fontValue) {
-    // Current font
-    case 'eb-garamond':
+    case "eb-garamond":
       return "'EB Garamond', serif";
-
-    // Serif fonts
-    case 'playfair-display':
+    case "playfair-display":
       return "'Playfair Display', serif";
-    case 'merriweather':
+    case "merriweather":
       return "'Merriweather', serif";
-    case 'libre-baskerville':
+    case "libre-baskerville":
       return "'Libre Baskerville', serif";
-    case 'lora':
+    case "lora":
       return "'Lora', serif";
-    case 'cormorant-garamond':
+    case "cormorant-garamond":
       return "'Cormorant Garamond', serif";
-
-    // Sans-serif fonts
-    case 'open-sans':
+    case "open-sans":
       return "'Open Sans', sans-serif";
-    case 'roboto':
+    case "roboto":
       return "'Roboto', sans-serif";
-    case 'lato':
+    case "lato":
       return "'Lato', sans-serif";
-    case 'montserrat':
+    case "montserrat":
       return "'Montserrat', sans-serif";
-    case 'raleway':
+    case "raleway":
       return "'Raleway', sans-serif";
-    case 'work-sans':
+    case "work-sans":
       return "'Work Sans', sans-serif";
-    case 'poppins':
+    case "poppins":
       return "'Poppins', sans-serif";
-
-    // Display/artistic fonts
-    case 'cormorant':
+    case "cormorant":
       return "'Cormorant', serif";
-    case 'cinzel':
+    case "cinzel":
       return "'Cinzel', serif";
-    case 'josefin-sans':
+    case "josefin-sans":
       return "'Josefin Sans', sans-serif";
-    case 'josefin-slab':
+    case "josefin-slab":
       return "'Josefin Slab', serif";
-    case 'quicksand':
+    case "quicksand":
       return "'Quicksand', sans-serif";
-
-    // Default fallback
     default:
       return "'EB Garamond', serif";
   }
