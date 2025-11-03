@@ -103,20 +103,23 @@ export default function ArtworkGrid({
           ? `${artwork.videoThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`
           : null;
 
+        // If no thumbnail at all, fallback to a generic icon
+        if (!videoThumbUrl) {
+          return (
+            <div className={styles.videoPlaceholder}>
+              <span>Video</span>
+            </div>
+          );
+        }
+
         return (
           <div className={styles.videoThumbnail}>
-            {videoThumbUrl ? (
-              <img
-                src={videoThumbUrl}
-                alt={artwork.title || "Untitled video"}
-                className={styles.thumbnail}
-                loading={priority ? "eager" : "lazy"}
-              />
-            ) : (
-              <div className={styles.videoPlaceholder}>
-                <span>Video</span>
-              </div>
-            )}
+            <img
+              src={videoThumbUrl}
+              alt={artwork.title || "Untitled video"}
+              className={styles.thumbnail}
+              loading={index < 2 ? "eager" : "lazy"}
+            />
             <div className={styles.playButton}>▶</div>
           </div>
         );

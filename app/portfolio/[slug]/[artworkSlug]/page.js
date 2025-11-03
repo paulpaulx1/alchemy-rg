@@ -42,10 +42,22 @@ async function getPortfolioWithArtworks(portfolioSlug) {
         title,
         mediaType,
         "slug": slug.current,
-        "pdfThumbnailUrl": pdfThumbnail.asset->url,
-        "pdfUrl": pdfFile.asset->url,
         "imageUrl": image.asset->url,
-        year
+        "lowResImageUrl": lowResImage.asset->url,
+        "videoUrl": video.asset->url,
+        "externalVideoUrl": videoUrl,
+        "videoThumbnailUrl": videoThumbnail.asset->url,
+        "muxPlaybackId": muxPlaybackId,
+        "muxAssetId": muxAssetId,
+        "muxStatus": muxStatus,
+        "pdfUrl": pdfFile.asset->url,
+        "pdfThumbnailUrl": pdfThumbnail.asset->url,
+        "audioUrl": audioFile.asset->url,
+        "audioThumbnailUrl": audioThumbnail.asset->url,
+        year,
+        medium,
+        dimensions,
+        description
       }
     }
     `,
@@ -56,13 +68,14 @@ async function getPortfolioWithArtworks(portfolioSlug) {
   console.log("[getPortfolioWithArtworks]", {
     portfolioSlug,
     artworkCount: data?.artworks?.length,
-    pdfArtworks: data?.artworks
-      ?.filter((a) => a.mediaType === "pdf")
+    videoArtworks: data?.artworks
+      ?.filter((a) => a.mediaType === "video")
       .map((a) => ({
         title: a.title,
-        pdfThumbnailUrl: a.pdfThumbnailUrl,
-        pdfUrl: a.pdfUrl,
-        imageUrl: a.imageUrl,
+        muxPlaybackId: a.muxPlaybackId,
+        videoUrl: a.videoUrl,
+        externalVideoUrl: a.externalVideoUrl,
+        videoThumbnailUrl: a.videoThumbnailUrl,
       })),
   });
 
@@ -101,7 +114,6 @@ export default async function ArtworkPage({ params }) {
     portfolioSlug,
     artworkSlug
   );
-
 
   if (!portfolioData || !portfolioData.artworks) {
     return (
