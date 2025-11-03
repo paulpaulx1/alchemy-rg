@@ -5,12 +5,13 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import styles from "./ArtworkGrid.module.css";
 
-// Simple progressive loading - use lowRes first, then full quality
+// -----------------------------------------------------------
+// 🖼️ Progressive image loader (optional low-res → high-res swap)
+// -----------------------------------------------------------
 function useProgressiveImage(lowResUrl, fullResUrl) {
   const [currentSrc, setCurrentSrc] = useState(lowResUrl || fullResUrl);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // If we have both URLs, start with lowRes and upgrade
   if (lowResUrl && fullResUrl && !isLoaded) {
     const img = new Image();
     img.onload = () => {
@@ -23,6 +24,9 @@ function useProgressiveImage(lowResUrl, fullResUrl) {
   return currentSrc;
 }
 
+// -----------------------------------------------------------
+// 🧱 ArtworkGrid
+// -----------------------------------------------------------
 export default function ArtworkGrid({
   artworks,
   isLoading = false,
@@ -31,7 +35,11 @@ export default function ArtworkGrid({
   const params = useParams();
   const portfolioSlug = params.slug;
 
-  // Show loading skeletons
+  console.log("[ArtworkGrid] artworks:", artworks);
+
+  // -----------------------------------------------------------
+  // ⏳ Skeleton state
+  // -----------------------------------------------------------
   if (isLoading) {
     return (
       <div className={styles.grid}>
@@ -52,20 +60,26 @@ export default function ArtworkGrid({
     );
   }
 
-  if (!artworks.length) {
+  // -----------------------------------------------------------
+  // 🪶 Empty state
+  // -----------------------------------------------------------
+  if (!artworks?.length) {
     return (
-      <div className={styles.emptyMessage}>No artworks in this portfolio</div>
+      <div className={styles.emptyMessage}>No artworks in this portfolio.</div>
     );
   }
 
   const isSingleArtwork = artworks.length === 1;
 
+  // -----------------------------------------------------------
+  // 🎨 Thumbnail Renderer
+  // -----------------------------------------------------------
   function renderArtworkThumbnail(artwork, index) {
-    const priority = index < 4; // First 4 images get priority
+    const priority = index < 4;
 
     switch (artwork.mediaType) {
-      case "image":
-        // Use lowRes if available, otherwise fallback to original with basic optimization
+      // 🖼️ IMAGE
+      case "image": {
         const imageUrl = artwork.lowResImageUrl || artwork.imageUrl;
         const displayUrl = imageUrl
           ? `${imageUrl}?auto=format&fit=crop&w=600&h=600&q=75`
@@ -81,8 +95,10 @@ export default function ArtworkGrid({
         ) : (
           <div className={styles.imagePlaceholder}>No Image</div>
         );
+      }
 
-      case "video":
+      // 🎥 VIDEO
+      case "video": {
         const videoThumbUrl = artwork.videoThumbnailUrl
           ? `${artwork.videoThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`
           : null;
@@ -104,66 +120,72 @@ export default function ArtworkGrid({
             <div className={styles.playButton}>▶</div>
           </div>
         );
+      }
 
-      case "pdf":
+      // 📄 PDF
+      case "pdf": {
+        console.log("[ArtworkGrid] PDF artwork:", artwork);
         return (
-          <>
+          <div className={styles.pdfThumbnail}>
             {artwork.pdfThumbnailUrl ? (
-              <div className={styles.pdfThumbnail}>
-                <img
-                  src={artwork.imageUrl}
-                  alt={artwork.title}
-                  width={600}
-                  height={600}
-                  priority={index < 2} // Only first 2 images
-                  placeholder="blur" // Add blur placeholder
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              </div>
+              <img
+                src={`${artwork.pdfThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
+                alt={artwork.title || "PDF Thumbnail"}
+                className={styles.thumbnail}
+                loading={index < 2 ? "eager" : "lazy"}
+              />
             ) : (
-              <div className={styles.pdfDefaultThumbnail}>
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png"
-                  alt={artwork.title || "Untitled PDF"}
-                  className={styles.defaultThumbnail}
-                  loading="lazy"
-                />
-              </div>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Icon_pdf_file.svg/256px-Icon_pdf_file.svg.png"
+                alt={artwork.title || "Untitled PDF"}
+                className={styles.defaultThumbnail}
+                loading="lazy"
+              />
             )}
-          </>
+          </div>
         );
+      }
 
-      case "audio":
+      // 🎧 AUDIO
+      case "audio": {
+        const audioThumb = artwork.audioThumbnailUrl
+          ? `${artwork.audioThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`
+          : null;
+
         return (
-          <>
-            {artwork.audioThumbnailUrl ? (
-              <div className={styles.audioThumbnail}>
-                <img
-                  src={`${artwork.audioThumbnailUrl}?auto=format&fit=crop&w=600&h=600&q=75`}
-                  alt={artwork.title || "Untitled audio"}
-                  className={styles.thumbnail}
-                  loading={priority ? "eager" : "lazy"}
-                />
-              </div>
+          <div className={styles.audioThumbnail}>
+            {audioThumb ? (
+              <img
+                src={audioThumb}
+                alt={artwork.title || "Untitled audio"}
+                className={styles.thumbnail}
+                loading={priority ? "eager" : "lazy"}
+              />
             ) : (
-              <div className={styles.audioDefaultThumbnail}>
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png"
-                  alt={artwork.title || "Untitled Audio File"}
-                  className={styles.defaultThumbnail}
-                  loading="lazy"
-                />
-              </div>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/HD%40DH.nrw_Audio_Icon_2.svg/512px-HD%40DH.nrw_Audio_Icon_2.svg.png"
+                alt={artwork.title || "Untitled Audio File"}
+                className={styles.defaultThumbnail}
+                loading="lazy"
+              />
             )}
-          </>
+          </div>
         );
+      }
 
+      // ❓ UNSUPPORTED
       default:
-        return null;
+        return (
+          <div className={styles.unsupportedType}>
+            Unsupported media type: {artwork.mediaType}
+          </div>
+        );
     }
   }
 
+  // -----------------------------------------------------------
+  // 🧩 Render Grid
+  // -----------------------------------------------------------
   return (
     <div
       className={`${styles.grid} ${
@@ -175,20 +197,23 @@ export default function ArtworkGrid({
           href={`/portfolio/${portfolioSlug}/${artwork.slug}`}
           key={artwork._id}
           className={styles.gridItem}
-          prefetch={index < 2} // Only prefetch first 2
+          prefetch={index < 2}
         >
           <div className={styles.imageContainer}>
             <div className={styles.innerContainer}>
               {renderArtworkThumbnail(artwork, index)}
             </div>
           </div>
+
           <div className={styles.artworkInfo}>
-            <h3
-              className={styles.artworkTitle}
-              alt={artwork.displayableTitle || "Artwork"}
-            >
-              {artwork.displayableTitle}
-            </h3>
+            {artwork.displayableTitle && (
+              <h3
+                className={styles.artworkTitle}
+                alt={artwork.displayableTitle || "Artwork"}
+              >
+                {artwork.displayableTitle}
+              </h3>
+            )}
             {artwork.year && (
               <p className={styles.artworkYear}>{artwork.year}</p>
             )}

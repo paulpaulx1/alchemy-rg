@@ -27,7 +27,7 @@ export async function generateStaticParams() {
 export const revalidate = 604800; // 7 days
 
 async function getPortfolioWithArtworks(portfolioSlug) {
-  return await client.fetch(
+  const data = await client.fetch(
     `
     *[_type == "portfolio" && slug.current == $portfolioSlug][0] {
       _id,
@@ -40,33 +40,33 @@ async function getPortfolioWithArtworks(portfolioSlug) {
       "artworks": *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc) {
         _id,
         title,
-        displayTitle,
-        "displayableTitle": select(displayTitle == true => title, null),
         mediaType,
         "slug": slug.current,
-        year,
-        medium,
-        dimensions,
-        description,
-        order,
-        "imageUrl": image.asset->url,
-        "lowResImageUrl": lowResImage.asset->url,
-        "videoUrl": video.asset->url,
-        "videoThumbnailUrl": videoThumbnail.asset->url,
-        externalVideoUrl,
-        muxPlaybackId,
-        muxAssetId,
-        muxStatus,
-        "pdfUrl": pdfFile.asset->url,
         "pdfThumbnailUrl": pdfThumbnail.asset->url,
-        "audioUrl": audioFile.asset->url,
-        "audioThumbnailUrl": audioThumbnail.asset->url
+        "pdfUrl": pdfFile.asset->url,
+        "imageUrl": image.asset->url,
+        year
       }
     }
-  `,
+    `,
     { portfolioSlug },
-    { next: { revalidate: 604800, tags: ["sanity"] } } // ✅ enable ISR caching
+    { next: { revalidate: 604800, tags: ["sanity"] } }
   );
+
+  console.log("[getPortfolioWithArtworks]", {
+    portfolioSlug,
+    artworkCount: data?.artworks?.length,
+    pdfArtworks: data?.artworks
+      ?.filter((a) => a.mediaType === "pdf")
+      .map((a) => ({
+        title: a.title,
+        pdfThumbnailUrl: a.pdfThumbnailUrl,
+        pdfUrl: a.pdfUrl,
+        imageUrl: a.imageUrl,
+      })),
+  });
+
+  return data;
 }
 
 // Helper function to get embed URL from video links
@@ -101,6 +101,7 @@ export default async function ArtworkPage({ params }) {
     portfolioSlug,
     artworkSlug
   );
+
 
   if (!portfolioData || !portfolioData.artworks) {
     return (

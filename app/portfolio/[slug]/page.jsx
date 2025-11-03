@@ -4,11 +4,12 @@ import ArtworkGrid from "@/components/ArtworkGrid";
 import styles from "./Portfolio.module.css";
 import { PortableText } from "@portabletext/react";
 import { Suspense } from "react";
-import SafeImage from "@/components/SafeImage"; // ✅ new wrapper component
+import SafeImage from "@/components/SafeImage";
 
-// ISR config
+// -----------------------------------------------------------
+// ⚙️ ISR / Metadata
+// -----------------------------------------------------------
 export const revalidate = 604800; // 7 days, refreshed via webhook
-
 export const metadata = {
   robots: "index, follow",
 };
@@ -17,6 +18,7 @@ export const metadata = {
 // 🧠 Data fetching
 // -----------------------------------------------------------
 
+// Prebuild top-level or featured portfolios
 export async function generateStaticParams() {
   const portfolios = await client.fetch(
     `*[_type == "portfolio" && (parentPortfolio == null || featured == true)]{
@@ -29,52 +31,64 @@ export async function generateStaticParams() {
   return portfolios.map((p) => ({ slug: p.slug }));
 }
 
-async function getPortfolioBasicInfo(slug) {
-  return client.fetch(
-    `*[_type == "portfolio" && slug.current == $slug][0]{
-      _id, title, description, richTextBlock, featured,
-      "parentPortfolio": parentPortfolio->{title, "slug": slug.current}
-    }`,
-    { slug },
-    { next: { revalidate: 604800, tags: ["sanity"] } }
-  );
+// Fetch base portfolio info
+async function getPortfolioBasicInfo(slug, cacheBuster = null) {
+  const query = `*[_type == "portfolio" && slug.current == $slug][0]{
+    _id, title, description, richTextBlock, featured,
+    "parentPortfolio": parentPortfolio->{title, "slug": slug.current}
+  }`;
+
+  const options =
+    cacheBuster !== null
+      ? {} // disable ISR cache completely
+      : { next: { revalidate: 604800, tags: ["sanity"] } };
+
+  return client.fetch(query, { slug }, options);
 }
 
-async function getPortfolioContent(portfolioId) {
-  return client.fetch(
-    `{
-      "artworks": *[_type == "artwork" && portfolio._ref == $portfolioId] | order(order asc){
-        _id, title, displayTitle,
-        "displayableTitle": select(displayTitle == true => title, null),
-        mediaType, "slug": slug.current,
-        "imageUrl": image.asset->url,
-        "videoThumbnailUrl": videoThumbnail.asset->url,
-        "pdfThumbnailUrl": pdfThumbnail.asset->url,
-        "audioThumbnailUrl": audioThumbnail.asset->url,
-        ...select(mediaType == "video" => { muxPlaybackId, muxStatus }),
-        year
-      },
-      "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == $portfolioId] | order(order asc){
-        _id, title, "slug": slug.current, description, order,
-        "coverImageUrl": coalesce(
-          coverArtwork->image.asset->url,
-          coverImage.asset->url,
-          *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url
-        )
-      }
-    }`,
-    { portfolioId },
-    { next: { revalidate: 604800, tags: ["sanity"] } }
-  );
+// Fetch artworks + subportfolios
+async function getPortfolioContent(portfolioId, cacheBuster = null) {
+  const query = `{
+    "artworks": *[_type == "artwork" && portfolio._ref == $portfolioId] | order(order asc){
+      _id,
+      title,
+      displayTitle,
+      "displayableTitle": select(displayTitle == true => title, null),
+      mediaType,
+      "slug": slug.current,
+      "imageUrl": image.asset->url,
+      "videoThumbnailUrl": videoThumbnail.asset->url,
+      "pdfThumbnailUrl": pdfThumbnail.asset->url,
+      "audioThumbnailUrl": audioThumbnail.asset->url,
+      ...select(mediaType == "video" => { muxPlaybackId, muxStatus }),
+      year
+    },
+    "subPortfolios": *[_type == "portfolio" && parentPortfolio._ref == $portfolioId] | order(order asc){
+      _id, title, "slug": slug.current, description, order,
+      "coverImageUrl": coalesce(
+        coverArtwork->image.asset->url,
+        coverImage.asset->url,
+        *[_type == "artwork" && portfolio._ref == ^._id] | order(order asc)[0].image.asset->url
+      )
+    }
+  }`;
+
+  const options =
+    cacheBuster !== null
+      ? {} // fresh fetch
+      : { next: { revalidate: 604800, tags: ["sanity"] } };
+
+  return client.fetch(query, { portfolioId }, options);
 }
 
 // -----------------------------------------------------------
 // 🧱 Component
 // -----------------------------------------------------------
-export default async function Portfolio({ params }) {
-  const { slug } = await params;
-  const portfolioBasic = await getPortfolioBasicInfo(slug);
+export default async function Portfolio({ params, searchParams }) {
+  const { slug } = params;
+  const cacheBuster = searchParams?.cb || null; // ✅ enables ?cb=123 bypass
 
+  const portfolioBasic = await getPortfolioBasicInfo(slug, cacheBuster);
   if (!portfolioBasic) {
     return (
       <div className={styles.container}>
@@ -86,16 +100,16 @@ export default async function Portfolio({ params }) {
     );
   }
 
-  const portfolioContent = await getPortfolioContent(portfolioBasic._id);
+  const portfolioContent = await getPortfolioContent(portfolioBasic._id, cacheBuster);
   const portfolio = { ...portfolioBasic, ...portfolioContent };
+
+  console.log("[Portfolio] cacheBuster:", cacheBuster, "slug:", slug);
 
   return (
     <div className={styles.container}>
       {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
-        <Link href="/" className={styles.breadcrumbLink}>
-          Home
-        </Link>
+        <Link href="/" className={styles.breadcrumbLink}>Home</Link>
         <span className={styles.breadcrumbSeparator}>/</span>
 
         {portfolio.parentPortfolio && (
@@ -193,7 +207,7 @@ export default async function Portfolio({ params }) {
 }
 
 // -----------------------------------------------------------
-// 🩶 Skeletons (unchanged)
+// 🩶 Skeletons
 // -----------------------------------------------------------
 function SubPortfoliosSkeleton() {
   return (
