@@ -19,6 +19,7 @@
     "core-js": "^3.42.0",
     "hls.js": "^1.6.9",
     "next": "15.2.2",
+    "next-sanity": "^11.6.3",
     "pdfjs-dist": "4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
