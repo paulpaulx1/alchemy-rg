@@ -143,8 +143,13 @@
     text-align: center;
     color: #333;
     font-family: 'EB Garamond', serif;
-    max-width: 50%; /* Tighter constraint to prevent overlap */
+    max-width: 60%;
     margin: 0 auto 20px auto;
+    pointer-events: none; /* Critical: prevents this from blocking button clicks */
+  }
+
+  .desktopArtworkInfo * {
+    pointer-events: auto; /* Re-enable for children like links */
   }
   
   .artworkTitle {
@@ -219,23 +224,30 @@
     text-align: center;
     display: block;
     margin: 0;
+    z-index: 10000; /* Ensure buttons are on top */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
   /* Previous button - closer to left edge */
   .navLink:first-child {
-    left: 5%;
-    bottom: 10%;
+    left: 10%;
   }
   
   /* Next button - closer to right edge */
   .navLink:last-child {
-    right: 5%;
-    bottom: 10%;
+    right: 10%;
   }
   
   .navLink:hover {
     color: #000;
     border-color: #000;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .navLink:focus,
+  .navLink:active {
+    outline: none;
     background-color: rgba(0, 0, 0, 0.05);
   }
   
@@ -262,13 +274,13 @@
       min-height: 60px;
     }
     
-    /* Move buttons to 3% from edges on mobile */
+    /* Move buttons to 5% from edges on mobile */
     .navLink:first-child {
-      left: 3%;
+      left: 5%;
     }
     
     .navLink:last-child {
-      right: 3%;
+      right: 5%;
     }
     
     .navLink {
@@ -317,90 +329,6 @@
     }
   }
 
-  /* Navigation buttons - UPDATED */
-.navigation {
-    position: relative;
-    width: 100%;
-    max-width: none; /* Remove max-width constraint */
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Center the middle content */
-    padding: 0 2rem; /* Add some base padding */
-  }
-  
-  /* Position nav buttons at 10% from edges */
-  .navLink {
-    position: absolute;
-    background: transparent;
-    border: 1px solid #555;
-    font-size: 17px;
-    font-family: 'EB Garamond', serif;
-    color: #555;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    padding: 8px 16px;
-    transition: all 0.2s ease;
-    border-radius: 6px;
-    text-decoration: none;
-    text-align: center;
-    display: block;
-    margin: 0; /* Remove margin since we're using absolute positioning */
-  }
-  
-  /* Previous button - 10% from left edge */
-  .navLink:first-child {
-    left: 10%;
-  }
-  
-  /* Next button - 10% from right edge */
-  .navLink:last-child {
-    right: 10%;
-  }
-  
-  .navLink:hover {
-    color: #000;
-    border-color: #000;
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
-  /* Desktop artwork info - now truly centered */
-  .desktopArtworkInfo {
-    text-align: center;
-    color: #333;
-    font-family: 'EB Garamond', serif;
-    position: relative;
-    z-index: 1;
-    max-width: 60%; /* Constrain width so it doesn't overlap buttons */
-  }
-  
-  /* Mobile responsive - UPDATED */
-  @media (max-width: 767px) {
-    .navigation {
-      padding: 0 1rem;
-      min-height: 60px; /* Ensure enough height for buttons */
-    }
-    
-    /* On mobile, move buttons closer to center but still spread out */
-    .navLink:first-child {
-      left: 5%; /* Closer on mobile */
-    }
-    
-    .navLink:last-child {
-      right: 5%; /* Closer on mobile */
-    }
-    
-    .navLink {
-      font-size: 14px;
-      padding: 6px 12px;
-      min-width: 80px;
-    }
-    
-    .desktopArtworkInfo {
-      max-width: 70%; /* Allow more width on mobile */
-    }
-  }
-  
   /* Extra small screens */
   @media (max-width: 480px) {
     .navLink:first-child {
@@ -629,5 +557,156 @@
   
   .skeletonPdf {
     height: 400px;
+  }
+}
+
+/* Bottom section - contains info and navigation */
+.bottomSection {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 15px 10px;
+  backdrop-filter: blur(10px);
+}
+
+/* Desktop artwork info - centered with max width to prevent overlap */
+.desktopArtworkInfo {
+  text-align: center;
+  color: #333;
+  font-family: 'EB Garamond', serif;
+  max-width: 60%;
+  margin: 0 auto 20px auto;
+  pointer-events: none;
+}
+
+.desktopArtworkInfo * {
+  pointer-events: auto;
+}
+
+/* Navigation buttons - simplified positioning */
+.navigation {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-height: 50px;
+}
+
+/* Position nav buttons at edges */
+.navLink {
+  position: absolute;
+  background: transparent;
+  border: 1px solid #555;
+  font-size: 17px;
+  font-family: 'EB Garamond', serif;
+  color: #555;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  margin: 0;
+  z-index: 10000;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Previous button - closer to left edge */
+.navLink:first-child {
+  left: 10%;
+}
+
+/* Next button - closer to right edge */
+.navLink:last-child {
+  right: 10%;
+}
+
+.navLink:hover {
+  color: #000;
+  border-color: #000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.navLink:focus,
+.navLink:active {
+  outline: none;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile responsive */
+@media (max-width: 767px) {
+  .bottomSection {
+    padding: 10px 5px;
+  }
+  
+  .navigation {
+    padding: 0;
+    min-height: 60px;
+  }
+  
+  .navLink:first-child {
+    left: 5%;
+  }
+  
+  .navLink:last-child {
+    right: 5%;
+  }
+  
+  .navLink {
+    font-size: 14px;
+    padding: 6px 12px;
+    min-width: 80px;
+  }
+  
+  /* Constrain the info width much more on mobile to avoid button overlap */
+  .desktopArtworkInfo {
+    max-width: 50% !important; /* Narrower to stay between buttons */
+  }
+  
+  .artworkTitle {
+    font-size: 18px;
+  }
+  
+  .artworkDetails {
+    font-size: 12px;
+  }
+  
+  .artworkDescription {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navLink:first-child {
+    left: 3%;
+  }
+  
+  .navLink:last-child {
+    right: 3%;
+  }
+  
+  /* Even narrower on very small screens */
+  .desktopArtworkInfo {
+    max-width: 40%;
+  }
+}
+
+@media (max-width: 480px) {
+  .navLink:first-child {
+    left: 3%;
+  }
+  
+  .navLink:last-child {
+    right: 3%;
+  }
+  
+  /* Even narrower on very small screens */
+  .desktopArtworkInfo {
+    max-width: 40% !important; /* Override with !important */
+    margin-bottom: 20px !important; /* Keep consistent */
   }
 }

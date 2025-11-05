@@ -1,6 +1,7 @@
 import { client } from "@/lib/client";
 import Link from "next/link";
 import ResponsiveArtworkImage from "@/components/ResponsiveArtworkImage";
+import { PrevNavLink, NextNavLink } from "@/components/ArtworkNavLinks";
 import MuxVideo from "@/components/MuxVideo";
 import PdfViewer from "@/components/PdfViewer";
 import AudioPlayer from "@/components/AudioPlayer";
@@ -65,20 +66,6 @@ async function getPortfolioWithArtworks(portfolioSlug) {
     { next: { revalidate: 604800, tags: ["sanity"] } }
   );
 
-  console.log("[getPortfolioWithArtworks]", {
-    portfolioSlug,
-    artworkCount: data?.artworks?.length,
-    videoArtworks: data?.artworks
-      ?.filter((a) => a.mediaType === "video")
-      .map((a) => ({
-        title: a.title,
-        muxPlaybackId: a.muxPlaybackId,
-        videoUrl: a.videoUrl,
-        externalVideoUrl: a.externalVideoUrl,
-        videoThumbnailUrl: a.videoThumbnailUrl,
-      })),
-  });
-
   return data;
 }
 
@@ -103,13 +90,11 @@ function getEmbedUrl(url) {
   return url;
 }
 
-// Faster caching for artwork pages
-
 export default async function ArtworkPage({ params }) {
-  // In App Router, params is already resolved - no need to await
-  const { slug: portfolioSlug, artworkSlug } = params;
+  const resolvedParams = await params;
+  const { slug: portfolioSlug, artworkSlug } = resolvedParams;
 
-  // Get all portfolio data including all artworks
+  // now safe to use
   const portfolioData = await getPortfolioWithArtworks(
     portfolioSlug,
     artworkSlug
@@ -281,12 +266,9 @@ export default async function ArtworkPage({ params }) {
       {/* Bottom Navigation and Info */}
       <div className={styles.bottomSection}>
         <div className={styles.navigation}>
-          <Link
-            href={`/portfolio/${portfolioData.slug}/${prevArtwork.slug}`}
-            className={styles.navLink}
-          >
-            Previous
-          </Link>
+          <PrevNavLink
+            prevUrl={`/portfolio/${portfolioData.slug}/${prevArtwork.slug}`}
+          />
 
           <div className={styles.desktopArtworkInfo}>
             {currentArtwork.displayableTitle && (
@@ -316,12 +298,9 @@ export default async function ArtworkPage({ params }) {
             )}
           </div>
 
-          <Link
-            href={`/portfolio/${portfolioData.slug}/${nextArtwork.slug}`}
-            className={styles.navLink}
-          >
-            Next
-          </Link>
+          <NextNavLink
+            nextUrl={`/portfolio/${portfolioData.slug}/${nextArtwork.slug}`}
+          />
         </div>
       </div>
 
